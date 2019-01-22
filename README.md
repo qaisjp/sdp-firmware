@@ -1,2 +1,2 @@
-# sdp-firmware-server
-Remote processing server for GrowBot.
+# sdp-firmware
+Firmware for GrowBot.
