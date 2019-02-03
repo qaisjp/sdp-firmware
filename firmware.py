@@ -114,7 +114,8 @@ class GrowBot:
 
 
 # Create a main method which makes the robot move around randomly. This will be very useful for training the vision system.
-async def run_forever(growbot):
+@asyncio.coroutine
+def run_forever(growbot):
     while (True):
         if (random.random() < 0.25):
             growbot.stop()
@@ -156,7 +157,10 @@ async def run_forever(growbot):
 
 def main():
     grow_bot_inst = GrowBot(-1, -1) # No parameters yet
-    asyncio.run(run_forever(grow_bot_inst))
+    # asyncio.run(run_forever(grow_bot_inst)) # Introduced in 3.7
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_forever(grow_bot_inst))
+    loop.close()
 
 if __name__ == "__main__":
     main()
