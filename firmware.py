@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import ev3dev.ev3 as ev3
-# import mock as ev3
+import config
+if config.MOCK:
+    import mock as ev3
+else:
+    import ev3dev.ev3 as ev3
 import random
 import time
+import asyncio
 
 class GrowBot:
     # Static variables
@@ -113,6 +117,7 @@ class GrowBot:
 
 
 # Create a main method which makes the robot move around randomly. This will be very useful for training the vision system.
+@asyncio.coroutine
 def run_forever(growbot):
     while (True):
         if (random.random() < 0.25):
@@ -151,11 +156,14 @@ def run_forever(growbot):
                     growbot.largeRight()
 
         # Take a break until the next command
-        time.sleep(2)
+        yield from asyncio.sleep(2)
 
 def main():
     grow_bot_inst = GrowBot(-1, -1) # No parameters yet
-    run_forever(grow_bot_inst)
+    # asyncio.run(run_forever(grow_bot_inst)) # Introduced in 3.7
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_forever(grow_bot_inst))
+    loop.close()
 
 if __name__ == "__main__":
     main()
