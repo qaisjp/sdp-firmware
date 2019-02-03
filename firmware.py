@@ -178,20 +178,21 @@ def main():
     gb = GrowBot(-1, -1)
 
     # Instantiate and use remote
-    host = config.API_HOST
-    if config.API_SECURE:
-        host = "wss://"+host
-    else:
-        host = "ws://"+host
-    remote = Remote(config.UUID, host)
-    remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
+    if config.RESPOND_TO_API:
+        host = config.API_HOST
+        if config.API_SECURE:
+            host = "wss://"+host
+        else:
+            host = "ws://"+host
+        remote = Remote(config.UUID, host)
+        remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
+        asyncio.ensure_future(remote.connect())
 
-    # Run all tasks
+    # Run main demo
     asyncio.ensure_future(run_forever(gb))
-    asyncio.ensure_future(remote.connect())
-    pending = asyncio.Task.all_tasks()
 
     loop = asyncio.get_event_loop()
+    pending = asyncio.Task.all_tasks()
     loop.run_until_complete(asyncio.gather(*pending))
     loop.close()
 
