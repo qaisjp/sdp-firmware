@@ -153,7 +153,7 @@ def run_forever(growbot):
                     growbot.largeRight()
 
         # Take a break until the next command
-        time.sleep(2)
+        yield from asyncio.sleep(2)
 
 def main():
     grow_bot_inst = GrowBot(-1, -1) # No parameters yet
