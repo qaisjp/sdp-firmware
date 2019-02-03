@@ -1,5 +1,8 @@
 config.py
 
+# ev3dev library folder
+ev3dev/
+
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
 
@@ -124,6 +127,3 @@ dmypy.json
 .venv/
 
 # End of https://www.gitignore.io/api/python
-
-# ev3dev library folder
-ev3dev/
