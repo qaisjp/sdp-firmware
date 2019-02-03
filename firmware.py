@@ -126,7 +126,6 @@ class GrowBot:
             self.mediumLeft()
             self.forward()
         elif direction == "right":
-            remote_wheel_direction = 1
             self.mediumRight()
             self.forward()
         else:
