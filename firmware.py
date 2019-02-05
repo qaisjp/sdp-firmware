@@ -23,6 +23,9 @@ class GrowBot:
     ## Drive speeds
     forward_speed = 500
 
+    ## Obstacle detection threshold (in mm)
+    obstacle_threshold = 170
+
     # Initializer / Instance Attributes
     def __init__(self, battery_level, water_level):
         self.battery_level = battery_level
@@ -32,6 +35,9 @@ class GrowBot:
         self.driving_motor = ev3.LargeMotor('outA')
         self.steering_motor = ev3.MediumMotor('outB')
         self.obstacle_sensor = ev3.UltrasonicSensor('in1')
+
+        ## Defines robot behaviours
+        self.enable_obstacle_detection = False
 
         ## Detect all ports are connected
         ## Expansion: detect types of each port?
@@ -90,7 +96,10 @@ class GrowBot:
         if (speed <= 0):
             raise (ValueError("Speed must be positive"))
         else:
-            self.driving_motor.run_forever(speed_sp = speed)
+            if self.enable_obstacle_detection and self.faces_obstacle():
+                self.stop()
+            else:
+                self.driving_motor.run_forever(speed_sp = speed)
 
     def reverse(self, speed=500):
         # Function will set the driving motor to have -tive speed specified
@@ -103,6 +112,13 @@ class GrowBot:
     def backUp(self):
         # Function call will tell the robot to back up around 1m at a reasonable speed
         return
+
+    def faces_obstacle(self):
+        # Returns true if the obstacle sensor returns a value lower than the threshold set
+        return (self.obstacle_sensor.value() < self.obstacle_threshold)
+
+    def switch_obstacle_detection(self, value):
+        self.enable_obstacle_detection = value
 
     # def pumpWater(self, time):
     #     #Function will set the pumpung motor into action for the specified period of time
