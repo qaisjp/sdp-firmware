@@ -18,11 +18,11 @@
     "default": {
         "growbot": {
             "hashes": [
-                "sha256:a6ae548c2907c661f452e6bdc119e3b0fb011ab88bab3a43243fef16d616aec3",
-                "sha256:b547acdb37ebf6f7de18882574dc7d9a343baef760ec975464ad7a0d68e93253"
+                "sha256:236b84b5727c472d9d4302041af075cd8f8a35cefd7141f167feaa4c9d2e2af8",
+                "sha256:d50e752429d302033373b855e122fa7738dbdbd6eefd0741e451cd2d85ff3830"
             ],
             "index": "pypi",
-            "version": "==0.2.4"
+            "version": "==0.2.5"
         },
         "websockets": {
             "hashes": [
