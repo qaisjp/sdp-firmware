@@ -124,6 +124,9 @@ class GrowBot:
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value
+    
+    def switch_stop_on_obstacle(self, value):
+        self.stop_on_obstacle = value
 
     ### Migrated from demo_avoidance.py
 
