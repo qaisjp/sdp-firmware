@@ -25,6 +25,7 @@ class GrowBot:
 
     ## Obstacle detection threshold (in mm)
     obstacle_threshold = 170
+    obstacle_counter = 0
 
     # Initializer / Instance Attributes
     def __init__(self, battery_level, water_level):
@@ -38,6 +39,7 @@ class GrowBot:
 
         ## Defines robot behaviours
         self.enable_obstacle_detection = False
+        self.stop_on_obstacle = True
 
         ## Detect all ports are connected
         ## Expansion: detect types of each port?
@@ -97,7 +99,10 @@ class GrowBot:
             raise (ValueError("Speed must be positive"))
         else:
             if self.enable_obstacle_detection and self.faces_obstacle():
-                self.stop()
+                if self.stop_on_obstacle:
+                    self.stop()
+                else:
+                    self.demo_avoidance_retreat()
             else:
                 self.driving_motor.run_forever(speed_sp = speed)
 
@@ -119,6 +124,43 @@ class GrowBot:
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value
+
+    ### Migrated from demo_avoidance.py
+
+    # Show obstacle avoidance of the robot - Make the robot run a straight line
+    # path through the room, but with various obstacles in the way. The robot
+    # should use its IR sensor to detect the object in its path, stop, and navigate
+    # around the object.
+    def demo_avoidance_retreat(self):
+        self.reverse_timed(time = 4000)
+        time.sleep(4)
+        
+        if(self.obstacle_counter % 2 > 0):
+            self.rightTurn(time = 450)
+            self.forward()
+            time.sleep(1)
+            self.leftTurn(time=450)
+        else:
+            self.leftTurn(time = 450)
+            self.forward()
+            time.sleep(1)
+            self.rightTurn(time=450)
+        
+        self.obstacle_counter += 1
+
+    def leftTurn(self, time = 375):
+        self.steering_motor.run_timed(speed_sp = -GrowBot.medium_steer_speed, time_sp = time)
+
+    def rightTurn(self,time = 375):
+        self.steering_motor.run_timed(speed_sp = GrowBot.medium_steer_speed, time_sp = time)
+
+    def reverse_timed(self,speed = 300,time = 2000):
+        if (speed <= 0):
+            raise (ValueError("Speed must be positive"))
+        else:
+            self.driving_motor.run_timed(speed_sp = -speed, time_sp = time)
+
+    ### End section
 
     # def pumpWater(self, time):
     #     #Function will set the pumpung motor into action for the specified period of time
