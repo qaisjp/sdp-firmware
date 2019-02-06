@@ -136,17 +136,17 @@ class GrowBot:
     # around the object.
     def demo_avoidance_retreat(self):
         self.reverse_timed(time = 4000)
-        time.sleep(4)
+        yield from asyncio.sleep(4)
         
         if(self.obstacle_counter % 2 > 0):
             self.rightTurn(time = 450)
             self.forward()
-            time.sleep(1)
+            yield from asyncio.sleep(1)
             self.leftTurn(time=450)
         else:
             self.leftTurn(time = 450)
             self.forward()
-            time.sleep(1)
+            yield from asyncio.sleep(1)
             self.rightTurn(time=450)
         
         self.obstacle_counter += 1
