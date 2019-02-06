@@ -195,9 +195,6 @@ def main():
         remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
         create_task(remote.connect())
 
-    # Run main demo
-    create_task(run_forever(gb))
-
     loop = asyncio.get_event_loop()
     pending = asyncio.Task.all_tasks()
     loop.run_until_complete(asyncio.gather(*pending))
