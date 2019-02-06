@@ -128,6 +128,8 @@ class GrowBot:
         elif direction == "right":
             self.mediumRight()
             self.forward()
+        elif direction == "brake":
+            self.stop()
         else:
             print("Unknown direction received")
         print("End: moving in direction {}".format(direction))
