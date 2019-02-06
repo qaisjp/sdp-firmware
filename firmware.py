@@ -7,6 +7,7 @@ else:
 import random
 import time
 import asyncio
+from growbot import Remote, RPCType
 
 class GrowBot:
     # Static variables
@@ -115,6 +116,23 @@ class GrowBot:
 
     # PLUS MAY MORE PROBABLY...
 
+    def remote_move(self, direction):
+        print("Start: moving in direction {}".format(direction))
+        if direction == "forward":
+            self.forward()
+        elif direction == "backward":
+            self.reverse()
+        elif direction == "left":
+            self.mediumLeft()
+            self.forward()
+        elif direction == "right":
+            self.mediumRight()
+            self.forward()
+        elif direction == "brake":
+            self.stop()
+        else:
+            print("Unknown direction received")
+        print("End: moving in direction {}".format(direction))
 
 # Create a main method which makes the robot move around randomly. This will be very useful for training the vision system.
 @asyncio.coroutine
@@ -159,11 +177,27 @@ def run_forever(growbot):
         yield from asyncio.sleep(2)
 
 def main():
-    grow_bot_inst = GrowBot(-1, -1) # No parameters yet
-    # asyncio.run(run_forever(grow_bot_inst)) # Introduced in 3.7
+    gb = GrowBot(-1, -1)
+
+    if hasattr(asyncio, 'async'):
+        create_task = getattr(asyncio, 'async')
+    else:
+        create_task = getattr(asyncio, 'ensure_future')
+
+    # Instantiate and use remote
+    if config.RESPOND_TO_API:
+        host = config.API_HOST
+        if config.API_SECURE:
+            host = "wss://"+host
+        else:
+            host = "ws://"+host
+        remote = Remote(config.UUID, host)
+        remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
+        create_task(remote.connect())
+
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_forever(grow_bot_inst))
-    loop.close()
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))
 
 if __name__ == "__main__":
     main()
