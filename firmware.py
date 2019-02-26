@@ -38,7 +38,7 @@ class GrowBot:
         self.right_motor = ev3.LargeMotor('outB')
         self.arm_motor = ev3.LargeMotor('outC')
         self.front_sensor = ev3.UltrasonicSensor('in1')
-        self.back_sensor = ev3.UltrasonicSensor('in2')
+        # self.back_sensor = ev3.UltrasonicSensor('in2')
 
         self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
         self.motor_running_speed = 500 # Default running speed to both mobilisation motors
@@ -61,8 +61,8 @@ class GrowBot:
             raise IOError("Plug the arm motor into Port OutC.")
         if not self.front_sensor.connected:
             raise IOError("Plug the front sensor into Port In1.")
-        if not self.back_sensor.connected:
-            raise IOError("Plug the back sensor into Port In2.`")
+        # if not self.back_sensor.connected:
+        #     raise IOError("Plug the back sensor into Port In2.`")
 
     def raise_arm(self, running_speed=None, running_time=None, running_rotations=None):
         # Using default params
