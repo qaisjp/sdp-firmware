@@ -8,28 +8,10 @@ import random
 import time
 import asyncio
 from math import pi
-from growbot import Remote, RPCType
+from remote import Remote, RPCType
 
 
 class GrowBot:
-    # Static variables
-    ## Steering speeds
-    small_steer_speed = 100
-    medium_steer_speed = 100
-    large_steer_speed = 100
-
-    ## Steer time, in milliseconds
-    small_steer_time = 50
-    medium_steer_time = 100
-    large_steer_time = 150
-    
-    ## Drive speeds
-    forward_speed = 500
-
-    ## Obstacle detection threshold (in mm)
-    obstacle_threshold = 170
-    obstacle_counter = 0
-
     # Initializer / Instance Attributes
     def __init__(self, battery_level, water_level):
         self.battery_level = battery_level
@@ -80,7 +62,7 @@ class GrowBot:
         self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
         time.sleep(abs(running_count / running_speed))
 
-    def lowers_arm(self, running_speed=None, running_time=None, running_rotations=None):
+    def lower_arm(self, running_speed=None, running_time=None, running_rotations=None):
         # Using default params
         if running_speed is None:
             running_speed = self.motor_running_speed
@@ -205,7 +187,7 @@ class GrowBot:
 
     def front_faces_obstacle(self):
         # Returns true if the front sensor returns a value lower than the threshold set
-        return (self.front_sensor.value() < self.obstacle_threshold)
+        return (self.front_sensor.value() < self.sensor_threshold)
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value
@@ -216,25 +198,25 @@ class GrowBot:
 def main():
     gb = GrowBot(-1, -1)
 
-    if hasattr(asyncio, 'async'):
-        create_task = getattr(asyncio, 'async')
-    else:
-        create_task = getattr(asyncio, 'ensure_future')
+    # if hasattr(asyncio, 'async'):
+    #     create_task = getattr(asyncio, 'async')
+    # else:
+    #     create_task = getattr(asyncio, 'ensure_future')
 
-    # Instantiate and use remote
-    if config.RESPOND_TO_API:
-        host = config.API_HOST
-        if config.API_SECURE:
-            host = "wss://"+host
-        else:
-            host = "ws://"+host
-        remote = Remote(config.UUID, host)
-        remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
-        create_task(remote.connect())
+    # # Instantiate and use remote
+    # if config.RESPOND_TO_API:
+    #     host = config.API_HOST
+    #     if config.API_SECURE:
+    #         host = "wss://"+host
+    #     else:
+    #         host = "ws://"+host
+    #     remote = Remote(config.UUID, host)
+    #     remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
+    #     create_task(remote.connect())
 
-    loop = asyncio.get_event_loop()
-    pending = asyncio.Task.all_tasks()
-    loop.run_until_complete(asyncio.gather(*pending))
+    # loop = asyncio.get_event_loop()
+    # pending = asyncio.Task.all_tasks()
+    # loop.run_until_complete(asyncio.gather(*pending))
 
 if __name__ == "__main__":
     main()
