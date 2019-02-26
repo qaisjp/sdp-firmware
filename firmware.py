@@ -33,9 +33,17 @@ class GrowBot:
         self.water_level = water_level
 
         ## Definitions of all sensors and motors
-        self.driving_motor = ev3.LargeMotor('outA')
-        self.steering_motor = ev3.MediumMotor('outB')
-        self.obstacle_sensor = ev3.UltrasonicSensor('in1')
+        self.left_motor = ev3.LargeMotor('outA')
+        self.right_motor = ev3.LargeMotor('outB')
+        self.arm_motor = ev3.LargeMotor('outC')
+        self.front_sensor = ev3.UltrasonicSensor('in1')
+        self.back_sensor = ev3.UltrasonicSensor('in2')
+
+        self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
+        self.motor_running_speed = 500 # Default running speed to both mobilisation motors
+        self.motor_running_time = 1 # Default running time for both mobilisation motors, in seconds
+        self.turning_constant = 61 # Constant used for turning around
+        self.sensor_threshold = 40 # Distance used by front/back sensor to stop the robot beyond this value, in cm
 
         ## Defines robot behaviours
         self.enable_obstacle_detection = False
@@ -43,12 +51,44 @@ class GrowBot:
 
         ## Detect all ports are connected
         ## Expansion: detect types of each port?
-        if not (self.driving_motor.connected):
-            raise IOError("Plug the large motor into Port A.")
-        elif not (self.steering_motor.connected):
-            raise IOError("Plug the small motor into Port B.")
-        elif not (self.obstacle_sensor.connected):
-            raise IOError("Plug the small motor into Port 1.")
+        if not self.left_motor.connected:
+            raise IOError("Plug the left motor into Port OutA.")
+        if not self.right_motor.connected:
+            raise IOError("Plug the right motor into Port OutB.")
+        if not self.arm_motor.connected:
+            raise IOError("Plug the arm motor into Port OutC.")
+        if not self.front_sensor.connected:
+            raise IOError("Plug the front sensor into Port In1.")
+        if not self.back_sensor.connected:
+            raise IOError("Plug the back sensor into Port In2.`")
+
+    def raise_arm(self, running_speed=None, running_time=None, running_rotations=None):
+        # Using default params
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+        if running_time is None:
+            running_time = self.motor_running_time
+        if running_rotations is None:
+            running_rotations = self.arm_rotation_count
+        
+        running_count = -self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
+        # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
+        self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
+        time.sleep(abs(running_count / running_speed))
+
+    def lowers_arm(self, running_speed=None, running_time=None, running_rotations=None):
+        # Using default params
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+        if running_time is None:
+            running_time = self.motor_running_time
+        if running_rotations is None:
+            running_rotations = self.arm_rotation_count
+        
+        running_count = self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
+        # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
+        self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
+        time.sleep(abs(running_count / running_speed))
 
     def smallLeft(self):
         # Function will move front wheels left by small amount for ~1sec
