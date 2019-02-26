@@ -7,7 +7,9 @@ else:
 import random
 import time
 import asyncio
+from math import pi
 from growbot import Remote, RPCType
+
 
 class GrowBot:
     # Static variables
@@ -24,86 +26,217 @@ class GrowBot:
     ## Drive speeds
     forward_speed = 500
 
+    ## Obstacle detection threshold (in mm)
+    obstacle_threshold = 170
+    obstacle_counter = 0
+
     # Initializer / Instance Attributes
     def __init__(self, battery_level, water_level):
         self.battery_level = battery_level
         self.water_level = water_level
 
         ## Definitions of all sensors and motors
-        self.driving_motor = ev3.LargeMotor('outA')
-        self.steering_motor = ev3.MediumMotor('outB')
-        self.obstacle_sensor = ev3.UltrasonicSensor('in1')
+        self.left_motor = ev3.LargeMotor('outA')
+        self.right_motor = ev3.LargeMotor('outB')
+        self.arm_motor = ev3.LargeMotor('outC')
+        self.front_sensor = ev3.UltrasonicSensor('in1')
+        self.back_sensor = ev3.UltrasonicSensor('in2')
+
+        self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
+        self.motor_running_speed = 500 # Default running speed to both mobilisation motors
+        self.motor_running_time = 1 # Default running time for both mobilisation motors, in seconds
+        self.turning_constant = 61 # Constant used for turning around
+        self.turning_def_degree = 90 # Default degree used to turn
+        self.sensor_threshold = 40 # Distance used by front/back sensor to stop the robot beyond this value, in cm
+
+        ## Defines robot behaviours
+        self.enable_obstacle_detection = False
+        self.stop_on_obstacle = True
 
         ## Detect all ports are connected
         ## Expansion: detect types of each port?
-        if not (self.driving_motor.connected):
-            raise IOError("Plug the large motor into Port A.")
-        elif not (self.steering_motor.connected):
-            raise IOError("Plug the small motor into Port B.")
-        elif not (self.obstacle_sensor.connected):
-            raise IOError("Plug the small motor into Port 1.")
+        if not self.left_motor.connected:
+            raise IOError("Plug the left motor into Port OutA.")
+        if not self.right_motor.connected:
+            raise IOError("Plug the right motor into Port OutB.")
+        if not self.arm_motor.connected:
+            raise IOError("Plug the arm motor into Port OutC.")
+        if not self.front_sensor.connected:
+            raise IOError("Plug the front sensor into Port In1.")
+        if not self.back_sensor.connected:
+            raise IOError("Plug the back sensor into Port In2.`")
 
-    def smallLeft(self):
-        # Function will move front wheels left by small amount for ~1sec
-        # Precond: driving motor not idle
-        if (self.driving_motor.is_running):
-            self.steering_motor.run_timed(speed_sp = -GrowBot.small_steer_speed, time_sp = GrowBot.small_steer_time)
+    def raise_arm(self, running_speed=None, running_time=None, running_rotations=None):
+        # Using default params
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+        if running_time is None:
+            running_time = self.motor_running_time
+        if running_rotations is None:
+            running_rotations = self.arm_rotation_count
+        
+        running_count = -self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
+        # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
+        self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
+        time.sleep(abs(running_count / running_speed))
 
-    def mediumLeft(self):
-        # Function will move front wheels left by medium amount for ~1.5sec
-        # Precond: driving motor not idle
-        (self.driving_motor.is_running)
-        if (self.driving_motor.is_running):
-            self.steering_motor.run_timed(speed_sp = -GrowBot.medium_steer_speed, time_sp = 375)
+    def lowers_arm(self, running_speed=None, running_time=None, running_rotations=None):
+        # Using default params
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+        if running_time is None:
+            running_time = self.motor_running_time
+        if running_rotations is None:
+            running_rotations = self.arm_rotation_count
+        
+        running_count = self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
+        # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
+        self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
+        time.sleep(abs(running_count / running_speed))
 
+    # Note: time in seconds
+    def drive_forward(self, run_forever=True, running_time=None, running_speed=None):
+        if not run_forever and running_time is None:
+            running_time = self.motor_running_time
+        if running_speed is None:
+            running_speed = self.motor_running_speed
 
-    def largeLeft(self):
-        # Function will move front wheels left by large amount for ~2sec
-        # Precond: driving motor not idle
-        if (self.driving_motor.is_running):
-            self.steering_motor.run_timed(speed_sp = -GrowBot.large_steer_speed, time_sp = GrowBot.large_steer_time)
+        if run_forever:
+            self.left_motor.run_forever(speed_sp=-int(running_speed))
+            self.right_motor.run_forever(speed_sp=-int(running_speed))
+        else:
+            self.left_motor.run_timed(speed_sp=-int(running_speed), time_sp=running_time * 1000)
+            self.right_motor.run_forever(speed_sp=-int(running_speed), time_sp=running_time * 1000)
+            time.sleep(running_time)
 
-    def smallRight(self):
-        # Function will move front wheels right by small amount for ~1sec
-        # Precond: driving motor not idle
-        if (self.driving_motor.is_running):
-            self.steering_motor.run_timed(speed_sp = GrowBot.small_steer_speed, time_sp = GrowBot.small_steer_time)
+    def drive_backward(self, run_forever=True, running_time=None, running_speed=None):
+        if not run_forever and running_time is None:
+            running_time = self.motor_running_time
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+
+        if run_forever:
+            self.left_motor.run_forever(speed_sp=int(running_speed))
+            self.right_motor.run_forever(speed_sp=int(running_speed))
+        else:
+            self.left_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
+            self.right_motor.run_forever(speed_sp=int(running_speed), time_sp=running_time * 1000)
+            time.sleep(running_time)
+
+    def left_side_turn(self, run_forever=True, run_by_deg=False, run_by_time=False, running_time=None, running_speed=None, turn_degree=None, twin_turn=False):
+        # Default parameters
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+        if not run_forever:
+            if run_by_deg is True:
+                if turn_degree is None:
+                    turn_degree = self.turning_def_degree
+            elif running_time is None:
+                running_time = self.motor_running_time
+
+        if run_forever:
+            self.right_motor.run_forever(speed_sp=-int(running_speed))
+            if (twin_turn):
+                self.left_motor.run_forever(speed_sp=int(running_speed))
+            else:
+                self.left_motor.stop(stop_action="hold")
+        elif run_by_time:
+            self.right_motor.run_timed(speed_sp=-int(running_speed), time_sp=int(running_time) * 1000)
+            if (twin_turn):
+                self.left_motor.run_forever(speed_sp=int(running_speed), time_sp=int(running_time) * 1000)
+            else:
+                self.left_motor.stop(stop_action="hold")
+            time.sleep(running_time)
+
+        else:
+            running_dist = -self.turning_constant * int(turn_degree) / 2 / pi
+            self.left_motor.stop(stop_action="hold")
+            if (turn_degree < 0):
+                self.right_motor.run_to_rel_pos(position_sp= -running_dist, speed_sp=running_speed, stop_action="hold")
+            else:
+                self.right_motor.run_to_rel_pos(position_sp= running_dist, speed_sp=running_speed, stop_action="hold")
+            time.sleep(abs(running_dist / running_speed))
+
+    def right_side_turn(self, run_forever=True, run_by_deg=False, run_by_time=False, running_time=None, running_speed=None, turn_degree=None, twin_turn=False):
+        # Default parameters
+        if running_speed is None:
+            running_speed = self.motor_running_speed
+        if not run_forever:
+            if run_by_deg is True:
+                if turn_degree is None:
+                    turn_degree = self.turning_def_degree
+            elif running_time is None:
+                running_time = self.motor_running_time
+
+        if run_forever:
+            self.left_motor.run_forever(speed_sp=-int(running_speed))
+            if (twin_turn):
+                self.right_motor.run_forever(speed_sp=int(running_speed))
+            else:
+                self.right_motor.stop(stop_action="hold")
+        elif run_by_time:
+            self.left_motor.run_timed(speed_sp=-int(running_speed), time_sp=int(running_time) * 1000)
+            if (twin_turn):
+                self.right_motor.run_forever(speed_sp=int(running_speed), time_sp=int(running_time) * 1000)
+            else:
+                self.right_motor.stop(stop_action="hold")
+            time.sleep(running_time)
+
+        else:
+            running_dist = -self.turning_constant * int(turn_degree) / 2 / pi
+            self.right_motor.stop(stop_action="hold")
+            if (turn_degree < 0):
+                self.left_motor.run_to_rel_pos(position_sp= -running_dist, speed_sp=running_speed, stop_action="hold")
+            else:
+                self.left_motor.run_to_rel_pos(position_sp= running_dist, speed_sp=running_speed, stop_action="hold")
+            time.sleep(abs(running_dist / running_speed))
+
+    def stop(self, sta="brake"):
+        # Stop all the motors
+        self.left_motor.stop(stop_action=sta)
+        self.right_motor.stop(stop_action=sta)
+        self.arm_motor.stop(stop_action=sta)
+
+    def avoidance_routine(self):
+        self.drive_backward(run_forever=False, running_time=3)
+        self.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=45)
+        self.drive_forward(run_forever=False, running_time=2)
+        self.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=-45)
+
+    def front_faces_obstacle(self):
+        # Returns true if the front sensor returns a value lower than the threshold set
+        return (self.front_sensor.value() < self.obstacle_threshold)
+
+    def switch_obstacle_detection(self, value):
+        self.enable_obstacle_detection = value
     
-    def mediumRight(self):
-        # Function will move front wheels right by medium amount for ~1.5sec
-        # Precond: driving motor not idle
-        if (self.driving_motor.is_running):
-            self.steering_motor.run_timed(speed_sp = GrowBot.medium_steer_speed, time_sp = 375)
+    def switch_stop_on_obstacle(self, value):
+        self.stop_on_obstacle = value
 
-    def largeRight(self):
-        # Function will move front wheels right by small amount for ~2sec
-        # Precond: driving motor not idle
-        if (self.driving_motor.is_running):
-            self.steering_motor.run_timed(speed_sp = GrowBot.large_steer_speed, time_sp = GrowBot.large_steer_time)
+    # ### Migrated from demo_avoidance.py
 
-    def stop(self):
-        # Function will set the driving motor to idle
-        self.driving_motor.stop(stop_action="brake")
+    # # Show obstacle avoidance of the robot - Make the robot run a straight line
+    # # path through the room, but with various obstacles in the way. The robot
+    # # should use its IR sensor to detect the object in its path, stop, and navigate
+    # # around the object.
+    # def demo_avoidance_retreat(self):
+    #     self.reverse_timed(time = 4000)
+    #     yield from asyncio.sleep(4)
+        
+    #     if(self.obstacle_counter % 2 > 0):
+    #         self.rightTurn(time = 450)
+    #         self.forward()
+    #         yield from asyncio.sleep(1)
+    #         self.leftTurn(time=450)
+    #     else:
+    #         self.leftTurn(time = 450)
+    #         self.forward()
+    #         yield from asyncio.sleep(1)
+    #         self.rightTurn(time=450)
+        
+    #     self.obstacle_counter += 1
 
-    def forward(self, speed=500):
-        # Function will set the driving motor to have +tive speed specified
-        # Precond speed > 0
-        if (speed <= 0):
-            raise (ValueError("Speed must be positive"))
-        else:
-            self.driving_motor.run_forever(speed_sp = speed)
-
-    def reverse(self, speed=500):
-        # Function will set the driving motor to have -tive speed specified
-        # Precond speed > 0
-        if (speed <= 0):
-            raise (ValueError("Speed must be positive"))
-        else:
-            self.driving_motor.run_forever(speed_sp = -speed)
-
-    def backUp(self):
-        # Function call will tell the robot to back up around 1m at a reasonable speed
-        return
+    ### End section
 
     # def pumpWater(self, time):
     #     #Function will set the pumpung motor into action for the specified period of time
@@ -134,47 +267,47 @@ class GrowBot:
             print("Unknown direction received")
         print("End: moving in direction {}".format(direction))
 
-# Create a main method which makes the robot move around randomly. This will be very useful for training the vision system.
-@asyncio.coroutine
-def run_forever(growbot):
-    while (True):
-        if (random.random() < 0.25):
-            growbot.stop()
-        else:
-            drive_rand = random.random()
-            steer_rand = random.random()
-            intensity_rand = random.random()
+# # Create a main method which makes the robot move around randomly. This will be very useful for training the vision system.
+# @asyncio.coroutine
+# def run_forever(growbot):
+#     while (True):
+#         if (random.random() < 0.25):
+#             growbot.stop()
+#         else:
+#             drive_rand = random.random()
+#             steer_rand = random.random()
+#             intensity_rand = random.random()
 
-            # Driving randomiser
-            if (drive_rand < 0.5):
-                if (random.random() < 0.8):
-                    growbot.forward()
-                else:
-                    growbot.forward(speed=random.randint(1, 1000))
-            else:
-                if (random.random() < 0.8):
-                    growbot.reverse()
-                else:
-                    growbot.reverse(speed=random.randint(1,1000))
+#             # Driving randomiser
+#             if (drive_rand < 0.5):
+#                 if (random.random() < 0.8):
+#                     growbot.forward()
+#                 else:
+#                     growbot.forward(speed=random.randint(1, 1000))
+#             else:
+#                 if (random.random() < 0.8):
+#                     growbot.reverse()
+#                 else:
+#                     growbot.reverse(speed=random.randint(1,1000))
 
-            # Steering randomiser
-            if (steer_rand < 0.5):
-                if (intensity_rand < 0.33):
-                    growbot.smallLeft()
-                elif (intensity_rand < 0.67):
-                    growbot.mediumLeft()
-                else:
-                    growbot.largeLeft()
-            else:
-                if (intensity_rand < 0.33):
-                    growbot.smallRight()
-                elif (intensity_rand < 0.67):
-                    growbot.mediumRight()
-                else:
-                    growbot.largeRight()
+#             # Steering randomiser
+#             if (steer_rand < 0.5):
+#                 if (intensity_rand < 0.33):
+#                     growbot.smallLeft()
+#                 elif (intensity_rand < 0.67):
+#                     growbot.mediumLeft()
+#                 else:
+#                     growbot.largeLeft()
+#             else:
+#                 if (intensity_rand < 0.33):
+#                     growbot.smallRight()
+#                 elif (intensity_rand < 0.67):
+#                     growbot.mediumRight()
+#                 else:
+#                     growbot.largeRight()
 
-        # Take a break until the next command
-        yield from asyncio.sleep(2)
+#         # Take a break until the next command
+#         yield from asyncio.sleep(2)
 
 def main():
     gb = GrowBot(-1, -1)
