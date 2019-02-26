@@ -195,28 +195,44 @@ class GrowBot:
     def switch_stop_on_obstacle(self, value):
         self.stop_on_obstacle = value
 
+    def remote_move(self, direction):	
+        print("Start: moving in direction {}".format(direction))	
+        if direction == "forward":	
+            self.drive_forward()
+        elif direction == "backward":	
+            self.drive_backward()	
+        elif direction == "left":	
+            self.left_side_turn()
+        elif direction == "right":	
+            self.right_side_turn()	
+        elif direction == "brake":	
+            self.stop()	
+        else:	
+            print("Unknown direction received")	
+        print("End: moving in direction {}".format(direction))
+
 def main():
     gb = GrowBot(-1, -1)
 
-    # if hasattr(asyncio, 'async'):
-    #     create_task = getattr(asyncio, 'async')
-    # else:
-    #     create_task = getattr(asyncio, 'ensure_future')
+    if hasattr(asyncio, 'async'):
+        create_task = getattr(asyncio, 'async')
+    else:
+        create_task = getattr(asyncio, 'ensure_future')
 
-    # # Instantiate and use remote
-    # if config.RESPOND_TO_API:
-    #     host = config.API_HOST
-    #     if config.API_SECURE:
-    #         host = "wss://"+host
-    #     else:
-    #         host = "ws://"+host
-    #     remote = Remote(config.UUID, host)
-    #     remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
-    #     create_task(remote.connect())
+    # Instantiate and use remote
+    if config.RESPOND_TO_API:
+        host = config.API_HOST
+        if config.API_SECURE:
+            host = "wss://"+host
+        else:
+            host = "ws://"+host
+        remote = Remote(config.UUID, host)
+        remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
+        create_task(remote.connect())
 
-    # loop = asyncio.get_event_loop()
-    # pending = asyncio.Task.all_tasks()
-    # loop.run_until_complete(asyncio.gather(*pending))
+    loop = asyncio.get_event_loop()
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))
 
 if __name__ == "__main__":
     main()
