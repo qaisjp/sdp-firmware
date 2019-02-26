@@ -8,6 +8,8 @@ import random
 import time
 import asyncio
 from math import pi
+from growbot import Remote, RPCType
+
 
 class GrowBot:
     # Static variables
@@ -212,11 +214,27 @@ class GrowBot:
         self.stop_on_obstacle = value
 
 def main():
-    grow_bot_inst = GrowBot(-1, -1) # No parameters yet
-    # asyncio.run(run_forever(grow_bot_inst)) # Introduced in 3.7
+    gb = GrowBot(-1, -1)
+
+    if hasattr(asyncio, 'async'):
+        create_task = getattr(asyncio, 'async')
+    else:
+        create_task = getattr(asyncio, 'ensure_future')
+
+    # Instantiate and use remote
+    if config.RESPOND_TO_API:
+        host = config.API_HOST
+        if config.API_SECURE:
+            host = "wss://"+host
+        else:
+            host = "ws://"+host
+        remote = Remote(config.UUID, host)
+        remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
+        create_task(remote.connect())
+
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(grow_bot_inst.drive_forward())
-    loop.close()
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))
 
 if __name__ == "__main__":
     main()
