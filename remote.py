@@ -14,14 +14,14 @@ class RPCType(Enum):
 
 class Remote(object):
     def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
-        print("[REMOTE] Init {}" % (id))
+        print("[REMOTE] Init {}".format(id))
         self.id = id
         self.host = host
         self.callbacks = {}
 
     @asyncio.coroutine
     def connect(self):
-        print("[REMOTE] Connect {}" % (id))
+        print("[REMOTE] Connect {}".format(self.id))
         self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
         while True:
             message = yield from self.ws.recv()
