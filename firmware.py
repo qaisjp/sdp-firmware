@@ -207,6 +207,10 @@ class GrowBot:
             self.right_side_turn()	
         elif direction == "brake":	
             self.stop()	
+        elif direction == "armup":
+            self.raise_arm()
+        elif direction == "armdown":
+            self.lower_arm()
         else:	
             print("Unknown direction received")	
         print("End: moving in direction {}".format(direction))
