@@ -1,35 +1,21 @@
 #!/usr/bin/env python3
 import config
+print("[IMPORT] config imported")
+
 if config.MOCK:
     import mock as ev3
 else:
     import ev3dev.ev3 as ev3
+    print("[IMPORT] ev3 imported")
 import random
 import time
 import asyncio
 from math import pi
-from growbot import Remote, RPCType
+from remote import Remote, RPCType
+print("[IMPORT] everything else imported")
 
 
 class GrowBot:
-    # Static variables
-    ## Steering speeds
-    small_steer_speed = 100
-    medium_steer_speed = 100
-    large_steer_speed = 100
-
-    ## Steer time, in milliseconds
-    small_steer_time = 50
-    medium_steer_time = 100
-    large_steer_time = 150
-    
-    ## Drive speeds
-    forward_speed = 500
-
-    ## Obstacle detection threshold (in mm)
-    obstacle_threshold = 170
-    obstacle_counter = 0
-
     # Initializer / Instance Attributes
     def __init__(self, battery_level, water_level):
         self.battery_level = battery_level
@@ -40,7 +26,7 @@ class GrowBot:
         self.right_motor = ev3.LargeMotor('outB')
         self.arm_motor = ev3.LargeMotor('outC')
         self.front_sensor = ev3.UltrasonicSensor('in1')
-        self.back_sensor = ev3.UltrasonicSensor('in2')
+        # self.back_sensor = ev3.UltrasonicSensor('in2')
 
         self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
         self.motor_running_speed = 500 # Default running speed to both mobilisation motors
@@ -63,8 +49,8 @@ class GrowBot:
             raise IOError("Plug the arm motor into Port OutC.")
         if not self.front_sensor.connected:
             raise IOError("Plug the front sensor into Port In1.")
-        if not self.back_sensor.connected:
-            raise IOError("Plug the back sensor into Port In2.`")
+        # if not self.back_sensor.connected:
+        #     raise IOError("Plug the back sensor into Port In2.`")
 
     def raise_arm(self, running_speed=None, running_time=None, running_rotations=None):
         # Using default params
@@ -80,7 +66,7 @@ class GrowBot:
         self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
         time.sleep(abs(running_count / running_speed))
 
-    def lowers_arm(self, running_speed=None, running_time=None, running_rotations=None):
+    def lower_arm(self, running_speed=None, running_time=None, running_rotations=None):
         # Using default params
         if running_speed is None:
             running_speed = self.motor_running_speed
@@ -205,7 +191,7 @@ class GrowBot:
 
     def front_faces_obstacle(self):
         # Returns true if the front sensor returns a value lower than the threshold set
-        return (self.front_sensor.value() < self.obstacle_threshold)
+        return (self.front_sensor.value() < self.sensor_threshold)
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value
@@ -213,101 +199,25 @@ class GrowBot:
     def switch_stop_on_obstacle(self, value):
         self.stop_on_obstacle = value
 
-    # ### Migrated from demo_avoidance.py
-
-    # # Show obstacle avoidance of the robot - Make the robot run a straight line
-    # # path through the room, but with various obstacles in the way. The robot
-    # # should use its IR sensor to detect the object in its path, stop, and navigate
-    # # around the object.
-    # def demo_avoidance_retreat(self):
-    #     self.reverse_timed(time = 4000)
-    #     yield from asyncio.sleep(4)
-        
-    #     if(self.obstacle_counter % 2 > 0):
-    #         self.rightTurn(time = 450)
-    #         self.forward()
-    #         yield from asyncio.sleep(1)
-    #         self.leftTurn(time=450)
-    #     else:
-    #         self.leftTurn(time = 450)
-    #         self.forward()
-    #         yield from asyncio.sleep(1)
-    #         self.rightTurn(time=450)
-        
-    #     self.obstacle_counter += 1
-
-    ### End section
-
-    # def pumpWater(self, time):
-    #     #Function will set the pumpung motor into action for the specified period of time
-    #     # precond time>0
-    #     return
-
-    # def pumpWater(self):
-    #     #Function will set the pumpung motor into action for the set period of time
-    #     return
-
-    # PLUS MAY MORE PROBABLY...
-
-    def remote_move(self, direction):
-        print("Start: moving in direction {}".format(direction))
-        if direction == "forward":
-            self.forward()
-        elif direction == "backward":
-            self.reverse()
-        elif direction == "left":
-            self.mediumLeft()
-            self.forward()
-        elif direction == "right":
-            self.mediumRight()
-            self.forward()
-        elif direction == "brake":
-            self.stop()
-        else:
-            print("Unknown direction received")
+    def remote_move(self, direction):	
+        print("Start: moving in direction {}".format(direction))	
+        if direction == "forward":	
+            self.drive_forward()
+        elif direction == "backward":	
+            self.drive_backward()	
+        elif direction == "left":	
+            self.left_side_turn()
+        elif direction == "right":	
+            self.right_side_turn()	
+        elif direction == "brake":	
+            self.stop()	
+        elif direction == "armup":
+            self.raise_arm()
+        elif direction == "armdown":
+            self.lower_arm()
+        else:	
+            print("Unknown direction received")	
         print("End: moving in direction {}".format(direction))
-
-# # Create a main method which makes the robot move around randomly. This will be very useful for training the vision system.
-# @asyncio.coroutine
-# def run_forever(growbot):
-#     while (True):
-#         if (random.random() < 0.25):
-#             growbot.stop()
-#         else:
-#             drive_rand = random.random()
-#             steer_rand = random.random()
-#             intensity_rand = random.random()
-
-#             # Driving randomiser
-#             if (drive_rand < 0.5):
-#                 if (random.random() < 0.8):
-#                     growbot.forward()
-#                 else:
-#                     growbot.forward(speed=random.randint(1, 1000))
-#             else:
-#                 if (random.random() < 0.8):
-#                     growbot.reverse()
-#                 else:
-#                     growbot.reverse(speed=random.randint(1,1000))
-
-#             # Steering randomiser
-#             if (steer_rand < 0.5):
-#                 if (intensity_rand < 0.33):
-#                     growbot.smallLeft()
-#                 elif (intensity_rand < 0.67):
-#                     growbot.mediumLeft()
-#                 else:
-#                     growbot.largeLeft()
-#             else:
-#                 if (intensity_rand < 0.33):
-#                     growbot.smallRight()
-#                 elif (intensity_rand < 0.67):
-#                     growbot.mediumRight()
-#                 else:
-#                     growbot.largeRight()
-
-#         # Take a break until the next command
-#         yield from asyncio.sleep(2)
 
 def main():
     gb = GrowBot(-1, -1)
@@ -324,6 +234,7 @@ def main():
             host = "wss://"+host
         else:
             host = "ws://"+host
+
         remote = Remote(config.UUID, host)
         remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
         create_task(remote.connect())
@@ -333,4 +244,5 @@ def main():
     loop.run_until_complete(asyncio.gather(*pending))
 
 if __name__ == "__main__":
+    print("[MAIN] Running!")
     main()
