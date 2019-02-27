@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 import config
+print("[IMPORT] config imported")
+
 if config.MOCK:
     import mock as ev3
 else:
     import ev3dev.ev3 as ev3
+    print("[IMPORT] ev3 imported")
 import random
 import time
 import asyncio
 from math import pi
 from remote import Remote, RPCType
+print("[IMPORT] everything else imported")
 
 
 class GrowBot:
