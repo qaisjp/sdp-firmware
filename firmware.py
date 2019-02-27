@@ -226,6 +226,7 @@ def main():
             host = "wss://"+host
         else:
             host = "ws://"+host
+
         remote = Remote(config.UUID, host)
         remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
         create_task(remote.connect())
@@ -235,4 +236,5 @@ def main():
     loop.run_until_complete(asyncio.gather(*pending))
 
 if __name__ == "__main__":
+    print("[MAIN] Running!")
     main()
