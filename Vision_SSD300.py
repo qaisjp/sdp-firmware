@@ -13,7 +13,7 @@ from imutils.video import FPS
 
 
 class Vision:
-    def __init__(self, model_xml, model_bin, is_headless, live_stream, confidence_interval):
+    def __init__(self, model_xml, model_bin, robot_controller, is_headless, live_stream, confidence_interval):
         """
         Vision class constructor.
         :param model_xml:           Network topology
@@ -24,13 +24,15 @@ class Vision:
                                     processed
         """
         log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        log.info("Instantiating Vision class...")
 
-        # Webscoket endpoint for live streaming
+        # Websocket endpoint for live streaming
         ws_endpoint = "ws://api.growbot.tardis.ed.ac.uk/stream-video/35ae6830-d961-4a9c-937f-8aa5bc61d6a3"
 
         self.is_headless = is_headless
         self.confidence_interval = confidence_interval
         self.live_stream = live_stream
+        self.robot_controller = robot_controller
 
         # Initialize plugin
         log.info("Initializing plugin for MYRIAD X VPU...")
@@ -114,10 +116,13 @@ class Vision:
                 # Parse detection results of the current request
                 res = self.exec_net.requests[cur_request_id].outputs[self.out_blob]
 
-                preds = [self.process_prediction(frame, pred) for pred in res[0][0] if self.check_threshold(pred[2])]
+                predictions = [self.process_prediction(frame, pred) for pred in res[0][0] if self.check_threshold(pred[2])]
+                self.robot_controller.process_visual_data(predictions)
 
                 # Display frame
-                threading.Thread(target=self.process_frame, args=(frame,)).start()
+                self.process_frame(frame)
+                # TODO: Fix live stream
+                #threading.Thread(target=self.process_frame, args=(frame,)).start()
 
                 # Swap async request identifiers
                 cur_request_id, next_request_id = next_request_id, cur_request_id
@@ -167,7 +172,7 @@ class Vision:
         :return:
         """
         # Draw bounding box and class label
-        color = (0, 255, 0) if label == "plant" else (0, 0, 255)
+        color = (0, 255, 0) if label == "Plant" else (0, 0, 255)
         cv2.rectangle(frame, pred_boxpts[0], pred_boxpts[1], color, 2)
         cv2.putText(frame,
                     label + ' ' + str(round(prob * 100, 1)) + ' %',
@@ -224,21 +229,3 @@ class Vision:
             cv2.destroyAllWindows()
 
         self.fps.stop()
-
-
-def main():
-    model_xml = '/home/student/ssd300.xml'    # Network topology
-    model_bin = '/home/student/ssd300.bin'    # Network weights
-
-    vision = Vision(model_xml,
-                    model_bin,
-                    is_headless=True,
-                    live_stream=False,
-                    confidence_interval=0.5)
-    vision.start()
-
-    log.info("Approx FPS: {:.2f}".format(vision.fps.fps()))
-
-
-if __name__ == "__main__":
-    main()
