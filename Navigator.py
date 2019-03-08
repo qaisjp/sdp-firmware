@@ -12,7 +12,13 @@ class Navigator:
     Navigation module for GrowBot robot.
     """
 
-    def __init__(self, robot_controller, obstacle_threshold=0.5, plant_threshold=0.50, escape_delay=10, verbose=False):
+    def __init__(self,
+                 robot_controller,
+                 obstacle_threshold=0.5,
+                 plant_threshold=0.50,
+                 escape_delay=10,
+                 constant_delta=20,
+                 verbose=False):
         """
         Constructor for Navigator class.
         :param robot_controller:        RobotController instance coordinating vision and motor control
@@ -35,9 +41,7 @@ class Navigator:
         self.frame_width = 1280
         self.frame_height = 720
         self.frame_midpoint = self.frame_width / 2
-        self.midpoint_delta = 20
-        self.left_boundary = self.frame_midpoint - self.midpoint_delta
-        self.right_boundary = self.frame_midpoint + self.midpoint_delta
+        self.constant_delta = constant_delta
 
         # Internal states
         self.follow_mode = False        # Vision system found a plant and robot is moving towards it
@@ -119,7 +123,7 @@ class Navigator:
         :return:
         """
         # Loop until plant is located in [midpoint-delta, midpoint+delta] interval
-        while not self.check_convergence(next(iter(self.prediction_dict["plants"]))[0]):
+        while not self.check_convergence(next(iter(self.prediction_dict["plants"]))):
             # Turn left/right
             if next(iter(self.prediction_dict["plants"]))[0] >= self.frame_midpoint:
                 self.remote_motor_controller.turn_right()
@@ -183,17 +187,21 @@ class Navigator:
             if self.verbose:
                 log.info("Changed avoidance_mode to {}.".format(self.avoidance_mode))
 
-    def check_convergence(self, bb_midpoint):
+    def check_convergence(self, prediction):
         """
         Checks if object is located in the [midpoint-delta, midpoint+delta] interval.
-        :param bb_midpoint: Bounding box midpoint of an object
+        :param prediction:  Tuple containing (bb_midpoint, bb_width) of the prediction
         :return:            True if object is located in the [midpoint-delta, midpoint+delta], otherwise false
         """
-        flag = self.left_boundary <= bb_midpoint <= self.right_boundary
+        delta = self.get_dynamic_delta(prediction[1])
+
+        left = self.frame_midpoint - delta
+        right = self.frame_midpoint + delta
+
+        flag = left <= prediction[0] <= right
 
         if self.verbose:
-            log.info("Left: {0}, Right: {1}, Target_midpoint: {2}, Flag: {3}"
-                 .format(self.left_boundary, self.right_boundary, bb_midpoint, flag))
+            log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, prediction[0], flag))
 
         return flag
 
@@ -217,11 +225,6 @@ class Navigator:
         return (bb_width / self.frame_width) > self.obstacle_threshold and \
                (bb_midpoint - bb_width / 2) <= self.frame_midpoint <= (bb_midpoint + bb_width / 2)
 
-    def get_target_midpoint(self):
-        _, _, ((xmin, _), (xmax, _)) = next(iter(self.prediction_dict["plants"]))
-
-        return xmax - xmin
-
     @staticmethod
     def process_bb_coordinates(prediction):
         """
@@ -232,3 +235,12 @@ class Navigator:
         _, _, ((xmin, _), (xmax, _)) = prediction
 
         return xmin + (xmax - xmin) / 2, xmax - xmin
+
+    def get_dynamic_delta(self, bb_width):
+        """
+        Computes dynamic delta used for convergence procedure. Delta value is computed using
+        constant_delta/(bb_width/frame_width) formula
+        :param bb_width:    Bounding box width
+        :return:            Dynamic delta value
+        """
+        return self.constant_delta / (bb_width / self.frame_width)
