@@ -38,8 +38,8 @@ class Navigator:
 
         self.remote_motor_controller = RemoteMotorController()
 
-        self.frame_width = 1280
-        self.frame_height = 720
+        self.frame_width = 640
+        self.frame_height = 480
         self.frame_midpoint = self.frame_width / 2
         self.constant_delta = constant_delta
 
