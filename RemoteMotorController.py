@@ -18,7 +18,7 @@ class RemoteMotorController:
         est_server = websockets.serve(self.setup, port=self.port_nr)
         try:
             asyncio.get_event_loop().run_until_complete(est_server)
-            log.info("Info")
+            log.info("Waiting for EV3 to connect...")
         finally:
             pass
 
