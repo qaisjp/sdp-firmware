@@ -15,7 +15,16 @@ class EV3_Client:
         self.ws = yield from websockets.connect("ws://{}:{}/".format(self.host, 8866))
         while True:
             msg = yield from self.ws.recv()
+            self.message_process(msg)
 
+
+    def message_process(self, msg):
+        if msg == "left":
+            log.info("Turning left.")
+            pass
+        else:
+            log.info("Invalid command.")
+            pass
 
     @asyncio.coroutine
     def get_messages(self):

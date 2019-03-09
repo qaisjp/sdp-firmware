@@ -6,7 +6,6 @@ from remote import Remote
 import websockets
 import asyncio
 
-
 class RemoteMotorController:
     def __init__(self, address="localhost", port=8866):
         log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
@@ -29,6 +28,9 @@ class RemoteMotorController:
         log.info("Web socket connection established on {}:{}".format(websocket.host, websocket.port))
         self.ws = websocket
         while True:
+            if self.message != None:
+                yield from self.ws.send(self.message)
+                self.message = None
             pass
 
     @asyncio.coroutine
@@ -39,32 +41,32 @@ class RemoteMotorController:
 
     def turn_right(self):
         log.info("Turning right.")
-        asyncio.get_event_loop().run_until_complete(self.send_message("right"))
+        self.message = "right"
         time.sleep(1)
 
     def turn_left(self):
         log.info("Turning left.")
-        asyncio.get_event_loop().run_until_complete(self.send_message("left"))
+        self.message = "left"
         time.sleep(1)
 
     def go_forward(self):
         log.info("Going forward.")
-        asyncio.get_event_loop().run_until_complete(self.send_message("forward"))
+        self.message = "forward"
         time.sleep(1)
 
     def go_backward(self):
         log.info("Going backward.")
-        asyncio.get_event_loop().run_until_complete(self.send_message("backward"))
+        self.message = "backward"
         time.sleep(1)
 
     def random_walk(self):
         log.info("Performing random walk.")
-        asyncio.get_event_loop().run_until_complete(self.send_message("rw"))
+        self.message = "random"
         time.sleep(1)
 
     def stop(self):
         log.info("Stopping.")
-        asyncio.get_event_loop().run_until_complete(self.send_message("stop"))
+        self.message = "stop"
         time.sleep(1)
 
 def main():
