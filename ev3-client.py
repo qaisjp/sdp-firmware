@@ -3,6 +3,7 @@ import asyncio
 import sys
 import logging as log
 import firmware
+import threading
 
 class EV3_Client:
     def __init__(self, host="10.42.0.1"):
@@ -10,20 +11,29 @@ class EV3_Client:
         self.est = False
         self.ws = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
-        asyncio.get_event_loop().run_until_complete(self.connect())
+
+    def connect(self):
+        log.info("INFO")
+        try:
+            log.info("Connecting to Pi...")
+            asyncio.get_event_loop().run_until_complete(self.setup())
+        finally:
+            pass
 
     @asyncio.coroutine
-    def connect(self):
+    def setup(self):
         self.ws = yield from websockets.connect("ws://{}:{}/".format(self.host, 8866))
+        log.info("Web socket connection established on {}:{}".format(self.ws.host, self.ws.port))
         try:
             while True:
+                if self.ws == None:
+                    continue
                 msg = yield from self.ws.recv()
                 self.message_process(msg)
         finally:
             self.firmware.stop()
             self.ws.close()
-
-
+    
     def message_process(self, msg):
         if msg == "left":
             log.info("Turning left.")
@@ -47,15 +57,20 @@ class EV3_Client:
         else:
             log.info("Invalid command.")
 
-    @asyncio.coroutine
-    def get_messages(self):
-        msg = yield from self.ws.recv()
-        log.info(msg)
-
+def socket_establish_loop(client, loop):
+    asyncio.set_event_loop(loop)
+    client.connect()
+    loop.run_forever()
 
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     ev3 = EV3_Client()
+    
+    ws_loop = asyncio.new_event_loop()
+    ws_thread = threading.Thread(target=socket_establish_loop, args=(ev3, ws_loop,))
+    ws_thread.setDaemon(True)
+    ws_thread.start()
+
     asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":
