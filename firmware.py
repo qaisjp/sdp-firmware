@@ -26,7 +26,7 @@ class GrowBot:
         self.right_motor = ev3.LargeMotor('outB')
         self.arm_motor = ev3.LargeMotor('outC')
         self.front_sensor = ev3.UltrasonicSensor('in1')
-        # self.back_sensor = ev3.UltrasonicSensor('in2')
+        self.back_sensor = ev3.UltrasonicSensor('in2')
 
         self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
         self.motor_running_speed = 500 # Default running speed to both mobilisation motors
@@ -49,8 +49,8 @@ class GrowBot:
             raise IOError("Plug the arm motor into Port OutC.")
         if not self.front_sensor.connected:
             raise IOError("Plug the front sensor into Port In1.")
-        # if not self.back_sensor.connected:
-        #     raise IOError("Plug the back sensor into Port In2.`")
+        if not self.back_sensor.connected:
+            raise IOError("Plug the back sensor into Port In2.`")
 
     def raise_arm(self, running_speed=None, running_time=None, running_rotations=None):
         # Using default params
@@ -107,7 +107,8 @@ class GrowBot:
         else:
             self.left_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
             self.right_motor.run_forever(speed_sp=int(running_speed), time_sp=running_time * 1000)
-            time.sleep(running_time)
+            for _ in range(100):
+                time.sleep(running_time / 100)
 
     def left_side_turn(self, run_forever=True, run_by_deg=False, run_by_time=False, running_time=None, running_speed=None, turn_degree=None, twin_turn=False):
         # Default parameters
@@ -226,6 +227,8 @@ def main():
         create_task = getattr(asyncio, 'async')
     else:
         create_task = getattr(asyncio, 'ensure_future')
+
+    # TODO: add avoidance breaks
 
     # Instantiate and use remote
     if config.RESPOND_TO_API:

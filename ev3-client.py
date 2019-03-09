@@ -2,12 +2,14 @@ import websockets
 import asyncio
 import sys
 import logging as log
+import firmware
 
 class EV3_Client:
     def __init__(self, host="10.42.0.1"):
         self.host = host
         self.est = False
         self.ws = None
+        self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
         asyncio.get_event_loop().run_until_complete(self.connect())
 
     @asyncio.coroutine
@@ -21,10 +23,25 @@ class EV3_Client:
     def message_process(self, msg):
         if msg == "left":
             log.info("Turning left.")
-            pass
+            self.firmware.left_side_turn(running_speed=100)
+        elif msg == "right":
+            log.info("Turning right.")
+            self.firmware.right_side_turn(running_speed=100)
+        elif msg == "forward":
+            log.info("Going forward.")
+            self.firmware.drive_forward(running_speed=100)
+        elif msg == "backward":
+            log.info("Going backward.")
+            self.firmware.drive_backward(running_speed=100)
+        elif msg == "random":
+            log.info("Performing random walk.")
+            # TODO: implement random walk and break conditions...
+            self.firmware.drive_forward(running_speed=50)
+        elif msg == "stop":
+            log.info("Stopping.")
+            self.firmware.stop()
         else:
             log.info("Invalid command.")
-            pass
 
     @asyncio.coroutine
     def get_messages(self):

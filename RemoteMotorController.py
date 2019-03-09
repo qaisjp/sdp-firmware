@@ -2,7 +2,6 @@
 import logging as log
 import sys
 import time
-from remote import Remote
 import websockets
 import asyncio
 
@@ -16,7 +15,7 @@ class RemoteMotorController:
         
 
     def connect(self):
-        est_server = websockets.serve(self.setup, self.address_nr, self.port_nr)
+        est_server = websockets.serve(self.setup, port=self.port_nr)
         try:
             asyncio.get_event_loop().run_until_complete(est_server)
             log.info("Info")
