@@ -5,12 +5,18 @@ import logging as log
 import sys
 import threading
 import time
+import asyncio
 
 
 class Navigator:
     """
     Navigation module for GrowBot robot.
     """
+
+    def socket_establish_loop(self, rm, loop):
+        asyncio.set_event_loop(loop)
+        rm.connect()
+        loop.run_forever()
 
     def __init__(self,
                  robot_controller,
@@ -37,6 +43,12 @@ class Navigator:
         self.verbose = verbose
 
         self.remote_motor_controller = RemoteMotorController()
+
+        # Establish websocket connection to a new background thread
+        ws_loop = asyncio.new_event_loop()
+        ws_thread = threading.Thread(target=self.socket_establish_loop, args=(self.remote_motor_controller, ws_loop,))
+        ws_thread.setDaemon(True)
+        ws_thread.start()
 
         self.frame_width = 640
         self.frame_height = 480
