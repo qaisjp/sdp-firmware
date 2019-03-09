@@ -15,9 +15,13 @@ class EV3_Client:
     @asyncio.coroutine
     def connect(self):
         self.ws = yield from websockets.connect("ws://{}:{}/".format(self.host, 8866))
-        while True:
-            msg = yield from self.ws.recv()
-            self.message_process(msg)
+        try:
+            while True:
+                msg = yield from self.ws.recv()
+                self.message_process(msg)
+        finally:
+            self.firmware.stop()
+            self.ws.close()
 
 
     def message_process(self, msg):
@@ -51,7 +55,7 @@ class EV3_Client:
 
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-    ev3 = EV3_Client(host="localhost")
+    ev3 = EV3_Client()
     asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":
