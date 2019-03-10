@@ -33,7 +33,7 @@ class RemoteMotorController:
         self.ws_receiver = websocket
         while True:
             if self.message != None:
-                log.info("[Pi > EV3] Sending message {}".format(self.message))
+                log.info("[Pi > EV3] Sending message \"{}\"".format(self.message))
                 yield from self.ws_receiver.send(self.message)
                 self.message = None
             pass

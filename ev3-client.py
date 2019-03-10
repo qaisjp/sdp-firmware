@@ -63,7 +63,7 @@ class EV3_Client:
             self.ws_sender.close()
     
     def message_process(self, msg):
-        log.info("[EV3 < Pi] Received message {}".format(msg))
+        log.info("[EV3 < Pi] Received message \"{}\"".format(msg))
         if msg == "left":
             log.info("Turning left.")
             self.firmware.left_side_turn(running_speed=100)
