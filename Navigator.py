@@ -134,30 +134,34 @@ class Navigator:
         are selected based on distance from bounding box midpoint to frame midpoint.
         :return:
         """
-        # Loop until plant is located in [midpoint-delta, midpoint+delta] interval
-        while not self.check_convergence(next(iter(self.prediction_dict["plants"]))):
-            # Turn left/right
-            if next(iter(self.prediction_dict["plants"]))[0] >= self.frame_midpoint:
-                self.remote_motor_controller.turn_right()
+        log.info("follow_plant(): started.")
+        
+        if self.prediction_dict["plants"]:
+            plant = next(iter(self.prediction_dict["plants"]))
+            # Loop until plant is located in [midpoint-delta, midpoint+delta] interval
+            while not self.check_convergence(plant):
+                # Turn left/right
+                if next(iter(self.prediction_dict["plants"]))[0] >= self.frame_midpoint:
+                    self.remote_motor_controller.turn_right()
+                else:
+                    self.remote_motor_controller.turn_left()
+                if self.prediction_dict["plants"]:
+                    plant = next(iter(self.prediction_dict["plants"]))
+                else:
+                    break
+            # Check if robot is close to a plant, if not then go forward, else change follow_mode flag and perform
+            # random walk to find other plants
+            if self.approx_distance(plant[1]) >= self.plant_threshold:
+                if self.verbose:
+                    log.info("Plant approached.")
+                self.follow_mode = False
+                self.escape_mode = True
+                threading.Thread(target=self.disable_escape_mode).start()
+                self.remote_motor_controller.random_walk()
             else:
-                self.remote_motor_controller.turn_left()
-
-        # Check if robot is close to a plant, if not then go forward, else change follow_mode flag and perform
-        # random walk to find other plants
-        if self.approx_distance(next(iter(self.prediction_dict["plants"]))[1]) >= self.plant_threshold:
-            if self.verbose:
-                log.info("Plant approached.")
-
-            self.follow_mode = False
-            self.escape_mode = True
-
-            threading.Thread(target=self.disable_escape_mode).start()
-
-            self.remote_motor_controller.random_walk()
-        else:
-            if self.verbose:
-                log.info("Plant not approached.")
-            self.remote_motor_controller.go_forward()
+                if self.verbose:
+                    log.info("Plant not approached.")
+                self.remote_motor_controller.go_forward()
 
     def avoid_obstacle(self):
         while self.avoidance_mode:
