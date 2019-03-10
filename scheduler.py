@@ -53,7 +53,7 @@ class Event():
 
 class Scheduler():
     _sched: sched.scheduler
-    events: List[Event] = None
+    __events: List[Event] = None
 
     def __init__(self):
         # Initialise backing sched
@@ -62,33 +62,10 @@ class Scheduler():
         # Scheduler initiated, first read schedule from disk
         self.disk_load()
 
-        # Download from network, if possible
-        self.download()  # (todo: in a separate thread)
+    def push_events(self, events: List[Event]):
+        """Updates the event list, saves to disk, and reloads the scheduler"""
 
-    def download(self):
-        """Downloads events from the network.
-
-        After download, the scheduler is automatically reloaded.
-
-        The events are also automatically committed on disk.
-
-        If the download fails, two things may happen:
-        - If no events are currently loaded, an exception is thrown.
-        - If events are downloaded, nothing happens (the old events apply)
-        """
-
-        success = False
-
-        # If no events are downloaded, don't do anything
-        if not success:
-            return
-
-        # Download events
-        """DEMO EVENTS"""
-        e = Event()
-        e.recurrences = [str(rrule.rrule(freq=rrule.SECONDLY,
-                             interval=2, dtstart=datetime.now()))]
-        self.events = [e]
+        self.__events = events
 
         # Save these events to disk
         self.disk_save()
@@ -101,12 +78,12 @@ class Scheduler():
         print("[Scheduler] Attempting to save to disk")
 
         # Exclaim a warning if rules do not exist
-        if self.events is None:
+        if self.__events is None:
             print("[Scheduler] Save to disk aborted (nothing to save)")
             return
 
         f = open(PICKLE_FILE, "wb")
-        pickle.dump(self.events, f)
+        pickle.dump(self.__events, f)
         f.flush()
         f.close()
 
@@ -118,12 +95,11 @@ class Scheduler():
 
         if not os.path.isfile(PICKLE_FILE):
             warnings.warn("No events on disk, initialising empty events list.")
-            self.events = []
-            self.reload()
+            self.__events = []
             return
 
         f = open(PICKLE_FILE, "rb")
-        self.events = pickle.load(f)
+        self.__events = pickle.load(f)
         f.close()
 
         self.reload()
@@ -148,13 +124,12 @@ class Scheduler():
         # Schedule next set of events (up to next update time)
         min_dt: datetime = datetime.now()
         max_dt: datetime = min_dt + RELOAD_FREQUENCY
-        for event in self.events:
+        for event in self.__events:
             for t in event.find_instances(after=min_dt, before=max_dt):
                 self._sched.enterabs(t, 0, event.trigger)
 
         # Schedule a self reload after all events have elapsed
         self._sched.enterabs(max_dt, 1, self.reload)
-
 
     async def run(self):
         print("[Scheduler] Running...")
