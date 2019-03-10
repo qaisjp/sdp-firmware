@@ -16,7 +16,6 @@ class RemoteMotorController:
         
 
     def connect(self, port_nr=8866, sender=True):
-        print(port_nr, sender)
         if sender:
             est_server = websockets.serve(self.setup_sender, port=port_nr, ping_interval=None)
         else:
