@@ -1,19 +1,22 @@
 from typing import List
 from enum import Enum
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
+from dateutil import rrule
+from itertools import takewhile
 import sched
 import pickle
 import warnings
 import os.path
+import asyncio
 
 PICKLE_FILE = "rules.pickle.bin"
+RELOAD_FREQUENCY = timedelta(seconds=10)
 
 
 def datetime_sleep(dt: datetime):
     """Sleeps until dt"""
     delta = dt - datetime.now()
-    time.sleep(delta.total_seconds())
+    yield from asyncio.sleep(delta.total_seconds())
 
 
 class ActionName(Enum):
@@ -32,6 +35,21 @@ class Event():
     recurrences: List[str]
     actions: List[Action]
 
+    test = 0
+
+    def find_instances(self, before: datetime,
+                       after: datetime = datetime.now()) -> List[datetime]:
+        """Gets a list of trigger times before max_dt."""
+
+        r = rrule.rrulestr(self.recurrences[0])
+
+        return takewhile(lambda dt: dt < before,
+                         filter(lambda dt: dt >= after, r))
+
+    def trigger(self):
+        self.test += 1
+        print("Event was called ", self.test)
+
 
 class Scheduler():
     _sched: sched.scheduler
@@ -39,7 +57,7 @@ class Scheduler():
 
     def __init__(self):
         # Initialise backing sched
-        self._sched = sched.scheduler(datetime, datetime_sleep)
+        self._sched = sched.scheduler(datetime.now, datetime_sleep)
 
         # Scheduler initiated, first read schedule from disk
         self.disk_load()
@@ -59,18 +77,32 @@ class Scheduler():
         - If events are downloaded, nothing happens (the old events apply)
         """
 
-        # Download events
-        pass  # todo
+        success = False
 
+        # If no events are downloaded, don't do anything
+        if not success:
+            return
+
+        # Download events
+        """DEMO EVENTS"""
+        e = Event()
+        e.recurrences = [str(rrule.rrule(freq=rrule.SECONDLY,
+                             interval=2, dtstart=datetime.now()))]
+        self.events = [e]
+
+        # Save these events to disk
         self.disk_save()
+
+        # Apply these new events
+        self.reload()
 
     def disk_save(self):
         """Stores the rules currently in memory, to disk."""
-        print("disk_save() called")
+        print("[Scheduler] Attempting to save to disk")
 
         # Exclaim a warning if rules do not exist
         if self.events is None:
-            warnings.warn("Cannot save None events to disk")
+            print("[Scheduler] Save to disk aborted (nothing to save)")
             return
 
         f = open(PICKLE_FILE, "wb")
@@ -105,6 +137,7 @@ class Scheduler():
         This will allow all future events to be perpetually scheduled,
         but without murdering time.sleep.
         """
+        print("[Scheduler] Reloading...")
 
         # Clear the backing sched
         list(map(self._sched.cancel, self._sched.queue))
@@ -112,9 +145,17 @@ class Scheduler():
         # Ensure the backing sched is empty
         assert self._sched.empty()
 
-        # Loop through self.events and schedule events for next 24 hours
-        pass  # todo
+        # Schedule next set of events (up to next update time)
+        min_dt: datetime = datetime.now()
+        max_dt: datetime = min_dt + RELOAD_FREQUENCY
+        for event in self.events:
+            for t in event.find_instances(after=min_dt, before=max_dt):
+                self._sched.enterabs(t, 0, event.trigger)
 
-        # Schedule a self reload after 24 hours.
-        # Be careful about race conditions?
-        pass  # todo
+        # Schedule a self reload after all events have elapsed
+        self._sched.enterabs(max_dt, 1, self.reload)
+
+
+    async def run(self):
+        print("[Scheduler] Running...")
+        self._sched.run()
