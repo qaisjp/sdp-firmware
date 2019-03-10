@@ -4,6 +4,7 @@ import sys
 import logging as log
 import firmware
 import threading
+import random
 
 class EV3_Client:
     def __init__(self, host="10.42.0.1"):
@@ -48,9 +49,15 @@ class EV3_Client:
             log.info("Going backward.")
             self.firmware.drive_backward(running_speed=100)
         elif msg == "random":
-            log.info("Performing random walk.")
-            # TODO: implement random walk and break conditions...
-            self.firmware.drive_forward(running_speed=50)
+            log.info("Performing random turn.")
+            turn_left = random.random()
+            degree = random.randint(60,180)
+
+            if turn_left < 0.5:
+                self.firmware.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree)
+            else:
+                self.firmware.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree)
+
         elif msg == "stop":
             log.info("Stopping.")
             self.firmware.stop()
