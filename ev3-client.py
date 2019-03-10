@@ -54,9 +54,9 @@ class EV3_Client:
             degree = random.randint(60,180)
 
             if turn_left < 0.5:
-                self.firmware.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree)
+                self.firmware.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
             else:
-                self.firmware.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree)
+                self.firmware.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
 
         elif msg == "stop":
             log.info("Stopping.")
