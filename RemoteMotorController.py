@@ -4,39 +4,53 @@ import sys
 import time
 import websockets
 import asyncio
+import json
 
 class RemoteMotorController:
-    def __init__(self, address="localhost", port=8866):
+    def __init__(self, address="localhost"):
         log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
         self.address_nr = address
-        self.port_nr = port
-        self.ws = None
+        self.ws_receiver = None
+        self.ws_sender = None
         self.message = None
         
 
-    def connect(self):
-        est_server = websockets.serve(self.setup, port=self.port_nr, ping_interval=None)
+    def connect(self, port_nr=8866, sender=True):
+        print(port_nr, sender)
+        if sender:
+            est_server = websockets.serve(self.setup_sender, port=port_nr, ping_interval=None)
+        else:
+            est_server = websockets.serve(self.setup_receiver, port=19221, ping_interval=None)
         try:
-            log.info("Waiting for EV3 to connect...")
+            log.info("Waiting for EV3 to connect on port {}...".format(port_nr))
             asyncio.get_event_loop().run_until_complete(est_server)
         finally:
             pass
 
     @asyncio.coroutine
-    def setup(self, websocket, path):
+    def setup_sender(self, websocket, path):
         log.info("Web socket connection established on {}:{}".format(websocket.host, websocket.port))
-        self.ws = websocket
+        self.ws_receiver = websocket
         while True:
             if self.message != None:
-                yield from self.ws.send(self.message)
+                log.info("[Pi > EV3] Sending message {}".format(self.message))
+                yield from self.ws_receiver.send(self.message)
                 self.message = None
             pass
 
     @asyncio.coroutine
-    def send_message(self, msg):
-        log.info(msg)
-        if self.ws != None:
-            self.ws.send(msg)
+    def setup_receiver(self, websocket, path):
+        log.info("Web socket connection established on {}:{}".format(websocket.host, websocket.port))
+        self.ws_sender = websocket
+        while True:
+            msg = yield from self.ws_sender.recv()
+            self.process_message(msg)
+
+    def process_message(self, msg):
+        package = json.loads(msg)
+        log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
+        pass
+        
 
     def turn_right(self):
         log.info("Turning right.")
