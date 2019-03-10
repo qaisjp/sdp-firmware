@@ -22,7 +22,7 @@ class EV3_Client:
 
     @asyncio.coroutine
     def setup(self):
-        self.ws = yield from websockets.connect("ws://{}:{}/".format(self.host, 8866))
+        self.ws = yield from websockets.connect("ws://{}:{}/".format(self.host, 8866), ping_interval=None)
         log.info("Web socket connection established on {}:{}".format(self.ws.host, self.ws.port))
         try:
             while True:

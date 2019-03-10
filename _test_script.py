@@ -19,8 +19,8 @@ def main():
     wait_loop = asyncio.new_event_loop()
     task = wait_loop.create_task(asyncio.sleep(5))
     wait_loop.run_until_complete(task)
-
-    rm.turn_left()
+    while True:
+        rm.turn_left()
 
     asyncio.get_event_loop().run_forever()
 
