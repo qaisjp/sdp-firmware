@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+// The EV3 service definition.
+service EV3 {
+  // Sends a Hello
+  rpc SayHello (HelloVersion) returns (HelloVersion) {}
+
+  rpc Move (MoveRequest) returns (google.protobuf.Empty) {}
+  rpc MoveRandomly (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc MoveArm (MoveArmRequest) returns (google.protobuf.Empty) {}
+}
+
+// The request message containing the user's name.
+message HelloVersion {
+  string version = 1;
+}
+
+message MoveRequest {
+    enum Direction {
+        BRAKE = 0;
+        FORWARD = 1;
+        BACKWARD = 2;
+        LEFT = 3;
+        RIGHT = 4;
+    }
+
+    Direction direction = 1;
+}
+
+message MoveArmRequest {
+    enum Direction {
+        STOP = 0;
+        UP = 1;
+        DOWN = 2;
+    }
+
+    Direction direction = 1;
+}
