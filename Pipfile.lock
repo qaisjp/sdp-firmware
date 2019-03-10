@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8159f2897c60bb49d8c3dba897a90e1c7946f529f7c725987f3a3bea8156abdc"
+            "sha256": "90c6f323cce3c946c20386afa027a979ffdb6d557040f940b865c4af2c336be3"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -15,7 +15,23 @@
             }
         ]
     },
-    "default": {},
+    "default": {
+        "python-dateutil": {
+            "hashes": [
+                "sha256:7e6584c74aeed623791615e26efd690f29817a27c73085b78e4bad02493df2fb",
+                "sha256:c89805f6f4d64db21ed966fda138f8a5ed7a4fdbc1a8ee329ce1b74e3c74da9e"
+            ],
+            "index": "pypi",
+            "version": "==2.8.0"
+        },
+        "six": {
+            "hashes": [
+                "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c",
+                "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
+            ],
+            "version": "==1.12.0"
+        }
+    },
     "develop": {
         "astroid": {
             "hashes": [
@@ -26,10 +42,10 @@
         },
         "isort": {
             "hashes": [
-                "sha256:38a74a5ccf3a15a7a99f975071164f48d4d10eed4154879009c18e6e8933e5aa",
-                "sha256:abbb2684aa234d5eb8a67ef36d4aa62ea080d46c2eba36ad09e2990ae52e4305"
+                "sha256:473c458f279f1545fe80a4c901fe83681c27fb6969ae0bd2f1472143fc46eb1f",
+                "sha256:7867309b5d81326e349e762dd4b4af364ff9cc48ac7e3d3e01f44d70684ae11a"
             ],
-            "version": "==4.3.13"
+            "version": "==4.3.14"
         },
         "lazy-object-proxy": {
             "hashes": [
