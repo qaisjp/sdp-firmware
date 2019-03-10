@@ -5,8 +5,11 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+grpcio-tools = "*"
+flake8 = "*"
 
 [packages]
+grpcio = "*"
 
 [requires]
 python_version = "3"
