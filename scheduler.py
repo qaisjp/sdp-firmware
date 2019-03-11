@@ -9,9 +9,6 @@ import warnings
 import os.path
 import asyncio
 
-PICKLE_FILE = "rules.pickle.bin"
-RELOAD_FREQUENCY = timedelta(seconds=10)
-
 
 def datetime_sleep(dt: datetime):
     """Sleeps until dt"""
@@ -98,7 +95,16 @@ class Scheduler():
     _sched: sched.scheduler
     __events: List[Event] = None
 
-    def __init__(self):
+    filename: str
+    reload_freq: timedelta
+
+    def __init__(self, filename="rules.pickle.bin",
+                 reload_freq=timedelta(seconds=10)):
+
+        # Store settings
+        self.filename = filename
+        self.reload_freq = reload_freq
+
         # Initialise backing sched
         self._sched = sched.scheduler(datetime.now, datetime_sleep)
 
@@ -128,7 +134,7 @@ class Scheduler():
             print("[Scheduler] Save to disk aborted (nothing to save)")
             return
 
-        f = open(PICKLE_FILE, "wb")
+        f = open(self.filename, "wb")
         pickle.dump(self.__events, f)
         f.flush()
         f.close()
@@ -139,14 +145,14 @@ class Scheduler():
         If no rules are on disk, this will initialise events to an empty list.
         """
 
-        if not os.path.isfile(PICKLE_FILE):
+        if not os.path.isfile(self.filename):
             warnings.warn("No events on disk, initialising empty events list.")
             self.__events = []
             self.disk_save()
             self.reload()
             return
 
-        f = open(PICKLE_FILE, "rb")
+        f = open(self.filename, "rb")
         self.__events = pickle.load(f)
         f.close()
 
@@ -171,7 +177,7 @@ class Scheduler():
 
         # Schedule next set of events (up to next update time)
         min_dt: datetime = datetime.now()
-        max_dt: datetime = min_dt + RELOAD_FREQUENCY
+        max_dt: datetime = min_dt + self.reload_freq
         for event in self.__events:
             for t in event.find_instances(after=min_dt, before=max_dt):
                 self._sched.enterabs(t, 0, event.trigger)
