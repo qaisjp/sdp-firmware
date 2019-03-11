@@ -1,11 +1,11 @@
 import asyncio
 from scheduler import Scheduler, Event, Action, ActionName
 from dateutil.rrule import rrule, SECONDLY
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def check_24_hours():
-    s = Scheduler()
+    s = Scheduler(reload_freq=timedelta(seconds=12))
     asyncio.ensure_future(s.run())
 
     # EXAMPLE DOWNLOAD START
