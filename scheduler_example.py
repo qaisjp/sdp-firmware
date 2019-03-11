@@ -1,6 +1,6 @@
 import asyncio
 from scheduler import Scheduler, Event, Action, ActionName
-from dateutil.rrule import rrule, rruleset, SECONDLY
+from dateutil.rrule import rrule, SECONDLY
 from datetime import datetime
 
 

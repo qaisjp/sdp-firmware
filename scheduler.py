@@ -113,7 +113,6 @@ class Scheduler():
 
         self.__events = events
 
-
         # Save these events to disk
         self.disk_save()
 
