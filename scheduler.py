@@ -29,11 +29,31 @@ class Action():
     plant_id: int
     data: map
 
+    def __init__(self, name: ActionName, plant_id: int, data: map = {}):
+        self.name = name
+        self.plant_id = plant_id
+        self.data = data
+
+    def perform(self):
+        if self.name == ActionName.PLANT_WATER:
+            print("Supposed to water plant_id {} and data {}".format(
+                self.plant_id, self.data))
+        elif self.name == ActionName.PLANT_CAPTURE_PHOTO:
+            print("Supposed to take picture of plant_id {} and data {}".format(
+                self.plant_id, self.data))
+        else:
+            print("Unknown action: name: {}, plant_id: {}, data: {}".format(
+                self.name, self.plant_id, self.data))
+
+    def __str__(self):
+        return "Action(name={}, plant_id={}, data={})".format(
+            self.name.name, self.plant_id, self.data)
+
 
 class Event():
-    event_id: int
-    recurrences: List[str]
-    actions: List[Action]
+    event_id: int = None
+    recurrences: List[str] = []
+    actions: List[Action] = []
 
     test = 0
 
@@ -47,8 +67,31 @@ class Event():
                          filter(lambda dt: dt >= after, r))
 
     def trigger(self):
-        self.test += 1
-        print("Event was called ", self.test)
+        if len(self.actions) == 0:
+            print("Event triggered:", self)
+            return
+
+        for action in self.actions:
+            action.perform()
+
+    def __str__(self):
+        recurrences = "\n        "
+        if len(self.recurrences) > 0:
+            recurrences += ",\n        ".join(self.recurrences) + "\n    "
+        else:
+            recurrences = ""
+
+        actions = "\n        "
+        if len(self.actions) > 0:
+            actions += ",\n        ".join(map(str, self.actions)) + "\n    "
+        else:
+            actions = ""
+
+        return """Event(
+    event_id={},
+    recurrences=[{}],
+    actions=[{}]
+)""".format(self.event_id, recurrences, actions)
 
 
 class Scheduler():
@@ -65,7 +108,11 @@ class Scheduler():
     def push_events(self, events: List[Event]):
         """Updates the event list, saves to disk, and reloads the scheduler"""
 
+        for event in events:
+            print("[Scheduler] Pushing " + str(event))
+
         self.__events = events
+
 
         # Save these events to disk
         self.disk_save()
@@ -96,6 +143,8 @@ class Scheduler():
         if not os.path.isfile(PICKLE_FILE):
             warnings.warn("No events on disk, initialising empty events list.")
             self.__events = []
+            self.disk_save()
+            self.reload()
             return
 
         f = open(PICKLE_FILE, "rb")
