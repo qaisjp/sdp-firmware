@@ -99,7 +99,7 @@ class Scheduler():
     reload_freq: timedelta
 
     def __init__(self, filename="rules.pickle.bin",
-                 reload_freq=timedelta(seconds=10)):
+                 reload_freq=timedelta(hours=24)):
 
         # Store settings
         self.filename = filename
