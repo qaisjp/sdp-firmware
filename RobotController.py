@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from Vision_SSD300 import Vision
 from Navigator import Navigator
+import time
 import threading
 import logging as log
 import sys
@@ -21,10 +22,11 @@ class RobotController:
                         confidence_interval=0.5)
 
         self.navigator = Navigator(self, verbose=True)
-        self.qr_reader = QRReader()
+        
+        time.sleep(10)
+        # self.qr_reader = QRReader()
 
         threading.Thread(target=self.vision.start).start()
-        threading.Thread(target=self.navigator.start).start()
 
     def process_visual_data(self, predictions):
         """
@@ -32,13 +34,11 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
-        self.navigator.navigate(predictions)
-        if self.navigator.escape_mode:
-            # Identify QR code
-            self.qr_reader.snapshot_and_identify()
-            log.info(self.qr_reader.found_id)
-            
 
+        self.navigator.on_new_frame(predictions)
+
+    def on_plant_found(self):
+        pass
 
 
 def main():
