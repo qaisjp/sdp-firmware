@@ -85,9 +85,9 @@ class EV3_Client:
             degree = random.randint(60,180)
 
             if turn_left < 0.5:
-                self.firmware.right_side_turn(run_forever=True, running_speed=50)
+                self.firmware.right_side_turn(run_forever=True, running_speed=75)
             else:
-                self.firmware.left_side_turn(run_forever=True, running_speed=50)
+                self.firmware.left_side_turn(run_forever=True, running_speed=75)
 
             rm_loop = asyncio.new_event_loop()
             rm_thread = threading.Thread(target=self.random_movement, args=(rm_loop,))
