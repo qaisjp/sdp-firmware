@@ -34,6 +34,17 @@ class Remote(object):
             else:
                 print("Uncaught message for type", type, "with data", data)
 
+    def plant_capture_photo(self, plant_id: int, image):
+        body = {
+            'type': "PLANT_CAPTURE_PHOTO",
+            'data': {
+                plant_id: plant_id,
+                image: image,  # Must be base64 encoded
+            }
+        }
+
+        self.ws.send(body)
+
     def close(self):
         self.ws.close()
 
