@@ -60,7 +60,7 @@ class GrowBot:
             running_time = self.motor_running_time
         if running_rotations is None:
             running_rotations = self.arm_rotation_count
-        
+
         running_count = -self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
         # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
         self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
@@ -74,7 +74,7 @@ class GrowBot:
             running_time = self.motor_running_time
         if running_rotations is None:
             running_rotations = self.arm_rotation_count
-        
+
         running_count = self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
         # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
         self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
@@ -196,29 +196,30 @@ class GrowBot:
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value
-    
+
     def switch_stop_on_obstacle(self, value):
         self.stop_on_obstacle = value
 
-    def remote_move(self, direction):	
-        print("Start: moving in direction {}".format(direction))	
-        if direction == "forward":	
+    def remote_move(self, direction):
+        print("Start: moving in direction {}".format(direction))
+        if direction == "forward":
             self.drive_forward()
-        elif direction == "backward":	
-            self.drive_backward()	
-        elif direction == "left":	
+        elif direction == "backward":
+            self.drive_backward()
+        elif direction == "left":
             self.left_side_turn()
-        elif direction == "right":	
-            self.right_side_turn()	
-        elif direction == "brake":	
-            self.stop()	
+        elif direction == "right":
+            self.right_side_turn()
+        elif direction == "brake":
+            self.stop()
         elif direction == "armup":
             self.raise_arm()
         elif direction == "armdown":
             self.lower_arm()
-        else:	
-            print("Unknown direction received")	
+        else:
+            print("Unknown direction received")
         print("End: moving in direction {}".format(direction))
+
 
 def main():
     gb = GrowBot(-1, -1)
@@ -245,6 +246,7 @@ def main():
     loop = asyncio.get_event_loop()
     pending = asyncio.Task.all_tasks()
     loop.run_until_complete(asyncio.gather(*pending))
+
 
 if __name__ == "__main__":
     print("[MAIN] Running!")
