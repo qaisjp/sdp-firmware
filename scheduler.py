@@ -22,9 +22,9 @@ class ActionName(Enum):
 
 
 class Action():
-    name: ActionName
-    plant_id: int
-    data: map
+    # name: ActionName
+    # plant_id: int
+    # data: map
 
     def __init__(self, name: ActionName, plant_id: int, data: map = {}):
         self.name = name
@@ -48,9 +48,9 @@ class Action():
 
 
 class Event():
-    event_id: int = None
-    recurrences: List[str] = []
-    actions: List[Action] = []
+    event_id = None
+    recurrences = []
+    actions = []
 
     test = 0
 
@@ -103,11 +103,11 @@ class Event():
 
 
 class Scheduler():
-    _sched: sched.scheduler
-    __events: List[Event] = None
+    # _sched: sched.scheduler
+    __events = None
 
-    filename: str
-    reload_freq: timedelta
+    # filename: str
+    # reload_freq: timedelta
 
     def __init__(self, filename="rules.pickle.bin",
                  reload_freq=timedelta(hours=24)):
