@@ -2,6 +2,7 @@ from enum import Enum, unique
 import websockets
 import json
 import asyncio
+import logging as log
 
 class UnhandledRPCTranslationException(Exception):
     pass
@@ -15,14 +16,14 @@ class RPCType(Enum):
 
 class Remote(object):
     def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
-        print("[REMOTE] Init {}".format(id))
+        log.info("[REMOTE] Init {}".format(id))
         self.id = id
         self.host = host
         self.callbacks = {}
 
     @asyncio.coroutine
     def connect(self):
-        print("[REMOTE] Connect {}".format(self.id))
+        log.info("[REMOTE] Connect {}".format(self.id))
         self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
         while True:
             message = yield from self.ws.recv()
@@ -33,7 +34,7 @@ class Remote(object):
             if type in self.callbacks:
                 self._translate_call(type, data, self.callbacks[type])
             else:
-                print("Uncaught message for type", type, "with data", data)
+                log.error("[REMOTE] Uncaught message for type", type, "with data", data)
 
     def plant_capture_photo(self, plant_id: int, image):
         body = {
