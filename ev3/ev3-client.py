@@ -84,10 +84,10 @@ class EV3_Client:
         log.info("[EV3 < Pi] Received message \"{}\"".format(msg))
         if msg == "left":
             log.info("Turning left.")
-            self.gb.left_side_turn(running_speed=100)
+            self.gb.left_side_turn(running_speed=100, twin_turn=True)
         elif msg == "right":
             log.info("Turning right.")
-            self.gb.right_side_turn(running_speed=100)
+            self.gb.right_side_turn(running_speed=100, twin_turn=True)
         elif msg == "forward":
             log.info("Going forward.")
             self.gb.drive_forward(running_speed=100)
@@ -99,9 +99,9 @@ class EV3_Client:
             turn_left = random.random()
 
             if turn_left < 0.5:
-                self.firmware.right_side_turn(run_forever=True, running_speed=75)
+                self.firmware.right_side_turn(run_forever=True, running_speed=75, twin_turn=True)
             else:
-                self.firmware.left_side_turn(run_forever=True, running_speed=75)
+                self.firmware.left_side_turn(run_forever=True, running_speed=75, twin_turn=True)
 
             rm_loop = asyncio.new_event_loop()
             rm_thread = threading.Thread(target=self.random_movement, args=(rm_loop,))
