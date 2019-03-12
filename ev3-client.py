@@ -104,7 +104,7 @@ def socket_receiver_establish_loop(client, loop):
 
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-    ev3 = EV3_Client(host="localhost")
+    ev3 = EV3_Client()
 
     ws_receiver = asyncio.new_event_loop()
     ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
