@@ -20,7 +20,7 @@ class EV3_Client:
         self.back_sensor_data = None
         self.stop_now = False
         self.random_thread = None
-        self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
+        self.firmware = GrowBot(-1,-1) # Battery/water levels to be implemented
         # Battery/water levels to be implemented
         self.gb = GrowBot(-1, -1)
 
@@ -97,10 +97,8 @@ class EV3_Client:
         elif msg == "random":
             log.info("Performing random turn.")
             turn_left = random.random()
-            degree = random.randint(60, 180)
 
             if turn_left < 0.5:
-<<<<<<< HEAD
                 self.firmware.right_side_turn(run_forever=True, running_speed=75)
             else:
                 self.firmware.left_side_turn(run_forever=True, running_speed=75)
@@ -110,11 +108,6 @@ class EV3_Client:
             self.random_thread = rm_thread
             rm_thread.setDaemon(True)
             rm_thread.start()
-            
-            # while rm_thread.is_alive():
-            #     if self.stop_now:
-            #         SigFinish.interrupt_thread(rm_thread)
-            #         rm_thread.join()
 
         elif msg == "stop":
             log.info("Stopping.")
@@ -132,20 +125,6 @@ class EV3_Client:
                 self.stop_now = True
                 SigFinish.interrupt_thread(self.random_thread)
                 self.random_thread.join()
-=======
-                self.gb.right_side_turn(run_forever=False, run_by_deg=True,
-                                        turn_degree=degree, running_speed=100)
-            else:
-                self.gb.left_side_turn(run_forever=False, run_by_deg=True,
-                                       turn_degree=degree, running_speed=100)
-
-        elif msg == "stop":
-            log.info("Stopping.")
-            self.gb.stop()
-        else:
-            log.info("Invalid command.")
-
->>>>>>> 1e70dfe751db2a5293c571f85c30e0a663f7106f
 
 def socket_sender_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
