@@ -8,13 +8,14 @@ import json
 
 
 class RemoteMotorController:
-    def __init__(self, address="localhost"):
+    def __init__(self, navigator, address="localhost"):
         log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s",
                         level=log.INFO, stream=sys.stdout)
         self.address_nr = address
         self.ws_receiver = None
         self.ws_sender = None
         self.message = None
+        self.navigator = navigator
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -35,6 +36,10 @@ class RemoteMotorController:
         log.info("Web socket connection established on {}:{}".format(
             websocket.host, websocket.port))
         self.ws_receiver = websocket
+
+        # Change connection state in Navigator object
+        self.navigator.change_connection_state()
+
         while True:
             if self.message is not None:
                 log.info("[Pi > EV3] Sending message \"{}\"".format(

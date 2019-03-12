@@ -53,6 +53,7 @@ class Navigator:
         self.turning_mode = False
         self.follow_mode = False
         self.escape_mode = False
+        self.connection_flag = False
 
         # Frame details.
         self.frame_width = 640
@@ -60,7 +61,7 @@ class Navigator:
         self.frame_midpoint = self.frame_width / 2
         self.frame_area = self.frame_width * self.frame_height
 
-        self.remote_motor_controller = RemoteMotorController()
+        self.remote_motor_controller = RemoteMotorController(self)
         
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
@@ -73,12 +74,24 @@ class Navigator:
         ws_receiver_thread.setDaemon(True)
         ws_receiver_thread.start()
 
+    def change_connection_state(self):
+        """
+        Changes connection state
+        :return:
+        """
+        self.connection_flag = True
+        log.info("Changed connection state.")
+
     def on_new_frame(self, predictions):
         """
         Acts as an entry point to the class. Each new prediction is transformed here and then processed by the class.
         :param predictions:     Class predictions produced by the VPU
         :return:
         """
+        # Avoid acting when websocket is not ready
+        if not self.connection_flag:
+            return
+
         # Separate class labels and transform inputs.
         self.prediction_dict["plants"] = [self.process_bb_coordinates(x) for x in predictions if x[0] == "Plant"]
         self.prediction_dict["obstacles"] = [self.process_bb_coordinates(x) for x in predictions if x[0] == "Obstacle"]
