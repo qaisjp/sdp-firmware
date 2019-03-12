@@ -78,19 +78,21 @@ class EV3_Client:
             self.firmware.drive_backward(running_speed=100)
         elif msg == "random":
             log.info("Performing random turn.")
-            turn_left = random.random()
-            degree = random.randint(60,180)
-
-            if turn_left < 0.5:
-                self.firmware.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
-            else:
-                self.firmware.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
-
+            rm_thread = threading.Thread(target=self.random_movement, args=())
+            rm_thread.run()
         elif msg == "stop":
             log.info("Stopping.")
             self.firmware.stop()
         else:
             log.info("Invalid command.")
+
+    def random_movement(self):
+        turn_left = random.random()
+        degree = random.randint(60,180)
+        if turn_left < 0.5:
+            self.firmware.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
+        else:
+            self.firmware.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
 
 def socket_sender_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
