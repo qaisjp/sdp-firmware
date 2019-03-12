@@ -2,6 +2,7 @@ from enum import Enum
 from datetime import datetime, timedelta
 from dateutil import rrule
 from itertools import takewhile
+import logging as log
 import sched
 import pickle
 import warnings
@@ -32,13 +33,13 @@ class Action():
 
     def perform(self):
         if self.name == ActionName.PLANT_WATER:
-            print("Supposed to water plant_id {} and data {}".format(
+            log.warn("[SCHED] Supposed to water plant_id {} and data {}".format(
                 self.plant_id, self.data))
         elif self.name == ActionName.PLANT_CAPTURE_PHOTO:
-            print("Supposed to take picture of plant_id {} and data {}".format(
+            log.warn("[SCHED] Supposed to take picture of plant_id {} and data {}".format(
                 self.plant_id, self.data))
         else:
-            print("Unknown action: name: {}, plant_id: {}, data: {}".format(
+            log.warn("[SCHED] Unknown action: name: {}, plant_id: {}, data: {}".format(
                 self.name, self.plant_id, self.data))
 
     def __str__(self):
@@ -63,7 +64,7 @@ class Event():
 
     def trigger(self):
         if len(self.actions) == 0:
-            print("Event triggered:", self)
+            log.info("[SCHED] Event triggered:", self)
             return
 
         for action in self.actions:
@@ -124,7 +125,7 @@ class Scheduler():
         """Updates the event list, saves to disk, and reloads the scheduler"""
 
         for event in events:
-            print("[Scheduler] Pushing " + str(event))
+            log.info("[SCHED] Pushing " + str(event))
 
         self.__events = events
 
@@ -136,11 +137,11 @@ class Scheduler():
 
     def disk_save(self):
         """Stores the rules currently in memory, to disk."""
-        print("[Scheduler] Attempting to save to disk")
+        log.info("[SCHED] Attempting to save to disk")
 
         # Exclaim a warning if rules do not exist
         if self.__events is None:
-            print("[Scheduler] Save to disk aborted (nothing to save)")
+            log.warn("[SCHED] Save to disk aborted (nothing to save)")
             return
 
         f = open(self.filename, "wb")
@@ -176,7 +177,7 @@ class Scheduler():
         This will allow all future events to be perpetually scheduled,
         but without murdering time.sleep.
         """
-        print("[Scheduler] Reloading...")
+        log.info("[SCHED] Reloading...")
 
         # Clear the backing sched
         list(map(self._sched.cancel, self._sched.queue))
@@ -195,5 +196,5 @@ class Scheduler():
         self._sched.enterabs(max_dt, 1, self.reload)
 
     async def run(self):
-        print("[Scheduler] Running...")
+        log.info("[SCHED] Running...")
         self._sched.run()
