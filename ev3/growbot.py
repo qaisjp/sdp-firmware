@@ -231,17 +231,7 @@ def main():
 
     # TODO: add avoidance breaks
 
-    # Instantiate and use remote
-    if config.RESPOND_TO_API:
-        host = config.API_HOST
-        if config.API_SECURE:
-            host = "wss://"+host
-        else:
-            host = "ws://"+host
-
-        remote = Remote(config.UUID, host)
-        remote.add_callback(RPCType.MOVE_IN_DIRECTION, gb.remote_move)
-        create_task(remote.connect())
+    print("This file doesn't do anything.")
 
     loop = asyncio.get_event_loop()
     pending = asyncio.Task.all_tasks()
