@@ -1,35 +1,24 @@
-#!/usr/bin/env python
-
 from RemoteMotorController import RemoteMotorController
 import logging as log
 import sys
 import threading
-import time
 import asyncio
+import time
 
 
 class Navigator:
-    """
-    Navigation module for GrowBot robot.
-    """
-
-    def socket_establish_loop(self, rm, loop):
-        asyncio.set_event_loop(loop)
-        rm.connect()
-        loop.run_forever()
-
     def __init__(self,
                  robot_controller,
                  obstacle_threshold=0.5,
-                 plant_threshold=0.50,
-                 escape_delay=10,
-                 constant_delta=20,
+                 plant_approach_threshold=0.50,
+                 escape_delay=5,
+                 constant_delta=10,
                  verbose=False):
         """
         Constructor for Navigator class.
         :param robot_controller:        RobotController instance coordinating vision and motor control
         :param obstacle_threshold:      Approximate distance metric used to classify obstacles as being close
-        :param plant_threshold:         Approximate distance metric used to classify plnts as being close
+        :param plant_approach_threshold:         Approximate distance metric used to classify plnts as being close
         :param escape_delay:            Amount of time in seconds to allow robot move away from a plant until following
                                         next one
         :param verbose:                 Verbosity flag
@@ -38,9 +27,24 @@ class Navigator:
 
         self.robot_controller = robot_controller
         self.obstacle_threshold = obstacle_threshold
-        self.plant_threshold = plant_threshold
+        self.plant_approach_threshold = plant_approach_threshold
         self.escape_delay = escape_delay
+        self.constant_delta = constant_delta
         self.verbose = verbose
+
+        self.prediction_dict = {"plants": [], "obstacles": []}
+
+        # Navigator states.
+        self.random_search_mode = False
+        self.turning_mode = False
+        self.follow_mode = False
+        self.escape_mode = False
+
+        # Frame details.
+        self.frame_width = 640
+        self.frame_height = 480
+        self.frame_midpoint = self.frame_width / 2
+        self.frame_area = self.frame_width * self.frame_height
 
         self.remote_motor_controller = RemoteMotorController()
 
@@ -50,122 +54,155 @@ class Navigator:
         ws_thread.setDaemon(True)
         ws_thread.start()
 
-        self.frame_width = 640
-        self.frame_height = 480
-        self.frame_midpoint = self.frame_width / 2
-        self.constant_delta = constant_delta
-
-        # Internal states
-        self.follow_mode = False        # Vision system found a plant and robot is moving towards it
-        self.escape_mode = False        # Robot just approached a plant and is looking for new ones
-        self.avoidance_mode = False     # Vision system found obstacle in front of the robot
-
-        # Search completion flag
-        self.search_complete = False  # Set to true if robot visited every node
-
-        # Visual data
-        self.prediction_dict = {"plants": [], "obstacles": []}
-
-    def start(self):
+    def socket_establish_loop(self, rm, loop):
         """
-        Logic wrapper for GrowBot's random exploration procedure.
+        Establishes websocket connection with RPi.
+        :param rm:      RemoteMotorController object
+        :param loop:    Websocket loop
         :return:
         """
-        # Loop until search is incomplete
-        while not self.search_complete:
-            if not self.follow_mode:
-                # No plant(s) detected. Start looking randomly.
-                self.random_search()
-            elif self.follow_mode:
-                # Plant(s) detected. Start following.
-                self.follow_plant()
-            elif self.avoidance_mode:
-                # Obstacle(s) detected. Start avoiding
-                self.avoid_obstacle()
+        asyncio.set_event_loop(loop)
+        rm.connect()
+        loop.run_forever()
 
-        # Search complete. Return to the base
-        self.return_to_base()
-
-    def navigate(self, predictions):
+    def on_new_frame(self, predictions):
         """
-        This function accepts new inputs from the RobotController class. Inputs are separated into plants and obstacles
-        and transformed. Transformed inputs are of the form (bb_midpoint, bb_width). Label and probability are dropped.
-        After transformation, each object class is sorted in descending order based on bounding box midpoint to frame
-        midpoint distance.
-        :param predictions: New inputs produced by the VPU
+        Acts as an entry point to the class. Each new prediction is transformed here and then processed by the class.
+        :param predictions:     Class predictions produced by the VPU
         :return:
         """
-        # Separate class labels and transform inputs
+        # Separate class labels and transform inputs.
         self.prediction_dict["plants"] = [self.process_bb_coordinates(x) for x in predictions if x[0] == "Plant"]
         self.prediction_dict["obstacles"] = [self.process_bb_coordinates(x) for x in predictions if x[0] == "Obstacle"]
 
-        # Sort predictions in descending order based on bounding box to frame midpoint distance
+        # Sort predictions in descending order based on bounding box to frame midpoint distance.
         self.prediction_dict["plants"].sort(key=lambda tup: abs(self.frame_midpoint - tup[0]))
         self.prediction_dict["obstacles"].sort(key=lambda tup: abs(self.frame_midpoint - tup[0]))
 
-        # Change state given new inputs
-        self.change_state()
+        # Change state given new frame.
+        self.change_state_on_new_frame()
 
-    def return_to_base(self):
+    def change_state_on_new_frame(self):
         """
-        Returns to the base station.
+        Changes state of the class after new predictions are received.
         :return:
         """
-        # TODO: Implement return functionality
-        pass
-
-    def random_search(self):
-        """
-        Performs random search until found plant to follow.
-        :return:
-        """
-        # Loop until found plant to follow and escape mode is inactive.
-        while not (self.follow_mode or self.escape_mode):
-            self.remote_motor_controller.random_walk()
-
-    def follow_plant(self):
-        """
-        Given that robot discovered new plant(s), this function will first try to move the robot in
-        left/right direction until plant is located in [midpoint-delta, midpoint+delta] interval (approximated
-        horizontal midpoint). If this condition is satisfied, function will approximate the distance between the robot
-        and plant by computing bounding box width to frame width ratio. If ratio is greater than plant_threshold, robot
-        starts looking for other plants by performing random walk (escape delay is used to ensure that robot can move
-        away from the plant to avoid plant-re-discovery loop), otherwise, robot will move forward. Plant(s)
-        are selected based on distance from bounding box midpoint to frame midpoint.
-        :return:
-        """
-        log.info("follow_plant(): started.")
-        
         if self.prediction_dict["plants"]:
-            plant = next(iter(self.prediction_dict["plants"]))
-            # Loop until plant is located in [midpoint-delta, midpoint+delta] interval
-            while not self.check_convergence(plant):
-                # Turn left/right
-                if next(iter(self.prediction_dict["plants"]))[0] >= self.frame_midpoint:
+            # Plant detected.
+
+            if self.prediction_dict["plants"]:
+                plant = next(iter(self.prediction_dict["plants"]))
+            else:
+                # Shouldn't really be here but might happen.
+                return
+
+            if self.escape_mode:
+                # Operating in escape mode. Ignore detection with bb_area greater than threshold.
+                if not self.is_plant_approached(plant):
+                    self.follow_plant_aux(plant)
+            else:
+                # Operating in normal mode.
+                self.follow_plant_aux(plant)
+        else:
+            # Plant not detected. Perform random search if not searching already.
+            if not self.random_search_mode:
+                log.info("Performing random walk...")
+                self.random_search_mode = True
+                self.remote_motor_controller.random_walk()
+
+    def follow_plant_aux(self, plant):
+        """
+        Helper function for plant following.
+        :param plant:   Plant to be followed.
+        :return:
+        """
+        if self.random_search_mode:
+            # Stop random search.
+            self.random_search_mode = False
+            self.remote_motor_controller.stop()
+
+        if not self.follow_mode:
+            # Switch state
+            self.follow_mode = True
+
+        self.follow_plant(plant)
+
+    @staticmethod
+    def process_bb_coordinates(prediction):
+        """
+        Applies pre-processing to predictions produced by the VPU
+        :param prediction:  Prediction produced by the VPU
+        :return:            Tuple containing (bb_midpoint, bb_box_coordinates)
+        """
+        _, _, ((xmin, ymin), (xmax, ymax)) = prediction
+
+        return xmin + (xmax - xmin) / 2, ((xmin, ymin), (xmax, ymax))
+
+    def follow_plant(self, plant):
+        """
+        Application logic for plant following procedure.
+        :param plant:   Plant to be followed.
+        :return:
+        """
+        log.info("Following a plant...")
+
+        if self.is_centered_plant(plant):
+            log.info("Plant found in the centre.")
+            # Plant is centered.
+
+            if self.turning_mode:
+                # Stop robot from turning.
+                log.info("Stopping the robot...")
+                self.turning_mode = False
+                self.remote_motor_controller.stop()
+
+            if not self.is_plant_approached(plant):
+                log.info("Moving forward...")
+                # Plant is not in front of the robot.
+                self.remote_motor_controller.go_forward()
+            else:
+                # Plant is in front of the robot. Stop the robot and switch to escape mode.
+                log.info("Plant approached.")
+                self.escape_mode = True
+                self.follow_mode = False
+                self.remote_motor_controller.stop()
+
+                # Report to robot controller.
+                self.robot_controller.on_plant_found()
+
+                # Start another random walk.
+                self.random_search_mode = True
+                self.remote_motor_controller.random_walk()
+
+                # Disable escape mode after escape_delay seconds.
+                threading.Thread(target=self.disable_escape_mode).start()
+        else:
+            # Plant isn't centered. Turn right/left.
+            log.info("Plant not in the centre.")
+
+            if not self.turning_mode:
+                # Robot is not turning. Get side and turn.
+                self.turning_mode = True
+
+                # Approximate angle of rotation
+                #angle = self.approximate_angle_of_rotation(plant)
+
+                if self.get_bb_midpoint(plant) > self.frame_midpoint:
+                    # Turn right
+                    log.info("Turning right...")
                     self.remote_motor_controller.turn_right()
                 else:
+                    # Turn left.
+                    log.info("Turning left...")
                     self.remote_motor_controller.turn_left()
-                if self.prediction_dict["plants"]:
-                    plant = next(iter(self.prediction_dict["plants"]))
-                else:
-                    break
-            # Check if robot is close to a plant, if not then go forward, else change follow_mode flag and perform
-            # random walk to find other plants
-            if self.approx_distance(plant[1]) >= self.plant_threshold:
-                if self.verbose:
-                    log.info("Plant approached.")
-                self.follow_mode = False
-                self.escape_mode = True
-                threading.Thread(target=self.disable_escape_mode).start()
-                self.remote_motor_controller.random_walk()
-            else:
-                if self.verbose:
-                    log.info("Plant not approached.")
-                self.remote_motor_controller.go_forward()
 
-    def avoid_obstacle(self):
-        while self.avoidance_mode:
-            pass
+    def is_plant_approached(self, plant):
+        """
+        Checks if plant has been approach by computing bounding box area to frame area.
+        :param plant:   Plant seen by the robot
+        :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
+        """
+        return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
 
     def disable_escape_mode(self):
         """
@@ -174,89 +211,55 @@ class Navigator:
         """
         time.sleep(self.escape_delay)
         self.escape_mode = False
-        if self.verbose:
-            log.info("Escape mode disabled.")
+        log.info("Escape mode disabled.")
 
-    def change_state(self):
+    def get_bb_area(self, prediction):
         """
-        Changes internal state given new inputs.
-        :return:
+        Computes bounding box area.
+        :param prediction:  Prediction for which area has to be computed
+        :return:            Area of the bounding box
         """
-        if self.prediction_dict["plants"] and not self.escape_mode:
-            # Plant(s) detected. Switch to follow mode
-            self.follow_mode = True
+        _, ((xmin, ymin), (xmax, ymax)) = prediction
 
-            if self.verbose:
-                log.info("Changed follow_mode to True.")
-        else:
-            # No plant(s) detected. Switch to search mode
-            self.follow_mode = False
+        return (xmax - xmin) * (ymax - ymin)
 
-            if self.verbose:
-                log.info("Changed follow_mode to False.")
+    def approximate_angle_of_rotation(self, plant):
+        return 0
 
-        if self.prediction_dict["obstacles"]:
-            # Detect any obstacle(s) in front of the robot
-            self.avoidance_mode = any(
-                [self.classify_obstacle(obstacle) for obstacle in self.prediction_dict["obstacles"]])
-
-            if self.verbose:
-                log.info("Changed avoidance_mode to {}.".format(self.avoidance_mode))
-
-    def check_convergence(self, prediction):
+    def is_centered_plant(self, plant):
         """
         Checks if object is located in the [midpoint-delta, midpoint+delta] interval.
-        :param prediction:  Tuple containing (bb_midpoint, bb_width) of the prediction
-        :return:            True if object is located in the [midpoint-delta, midpoint+delta], otherwise false
+        :param plant:
+        :return:
         """
-        delta = self.get_dynamic_delta(prediction[1])
+        delta = self.get_dynamic_delta(plant)
 
         left = self.frame_midpoint - delta
         right = self.frame_midpoint + delta
 
-        flag = left <= prediction[0] <= right
+        bb_midpoint = self.get_bb_midpoint(plant)
 
-        if self.verbose:
-            log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, prediction[0], flag))
+        flag = left <= bb_midpoint <= right
+
+        log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
 
         return flag
 
-    def approx_distance(self, bb_width):
+    def get_bb_midpoint(self, prediction):
         """
-        Computes bounding box width to frame width ratio to approximate distance between plant and robot.
-        :param bb_width:    Bounding box width
-        :return:            Bounding box width to frame width ratio
+        Computes bounding box midpoint.
+        :param prediction:  Prediction for which area has to be computed
+        :return:            Area of the bounding box
         """
-        return bb_width / self.frame_width
+        _, ((xmin, _), (xmax, _)) = prediction
 
-    def classify_obstacle(self, obstacle):
-        """
-        Classifies obstacles into actual obstacles (the ones that are on robot's way) or not.
-        :param obstacle:    Obstacle to be classified
-        :return:            True if bb_width to frame_width ratio is greater than obstacle_threshold and obstacle is in
-                            the centre, otherwise false.
-        """
-        bb_midpoint, bb_width = obstacle
+        return (xmax + xmin) / 2
 
-        return (bb_width / self.frame_width) > self.obstacle_threshold and \
-               (bb_midpoint - bb_width / 2) <= self.frame_midpoint <= (bb_midpoint + bb_width / 2)
-
-    @staticmethod
-    def process_bb_coordinates(prediction):
-        """
-        Applies pre-processing to predictions produced by the VPU
-        :param prediction:  Prediction produced by the VPU
-        :return:            Tuple containing (bb_midpoint, bb_width)
-        """
-        _, _, ((xmin, _), (xmax, _)) = prediction
-
-        return xmin + (xmax - xmin) / 2, xmax - xmin
-
-    def get_dynamic_delta(self, bb_width):
+    def get_dynamic_delta(self, plant):
         """
         Computes dynamic delta used for convergence procedure. Delta value is computed using
         constant_delta/(bb_width/frame_width) formula
         :param bb_width:    Bounding box width
         :return:            Dynamic delta value
         """
-        return self.constant_delta / (bb_width / self.frame_width)
+        return self.constant_delta / (self.get_bb_area(plant) / self.frame_area)
