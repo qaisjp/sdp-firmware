@@ -7,6 +7,7 @@ import threading
 import random
 import time
 import json
+import SigFinish
 
 class EV3_Client:
     def __init__(self, host="10.42.0.1"):
@@ -16,6 +17,8 @@ class EV3_Client:
         self.ws_sender = None
         self.front_sensor_data = None
         self.back_sensor_data = None
+        self.stop_now = False
+        self.random_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
     def connect(self, sender=False):
@@ -78,21 +81,41 @@ class EV3_Client:
             self.firmware.drive_backward(running_speed=100)
         elif msg == "random":
             log.info("Performing random turn.")
-            rm_thread = threading.Thread(target=self.random_movement, args=())
-            rm_thread.run()
+            turn_left = random.random()
+            degree = random.randint(60,180)
+
+            if turn_left < 0.5:
+                self.firmware.right_side_turn(run_forever=True, running_speed=75)
+            else:
+                self.firmware.left_side_turn(run_forever=True, running_speed=75)
+
+            rm_loop = asyncio.new_event_loop()
+            rm_thread = threading.Thread(target=self.random_movement, args=(rm_loop,))
+            self.random_thread = rm_thread
+            rm_thread.setDaemon(True)
+            rm_thread.start()
+            
+            # while rm_thread.is_alive():
+            #     if self.stop_now:
+            #         SigFinish.interrupt_thread(rm_thread)
+            #         rm_thread.join()
+
         elif msg == "stop":
             log.info("Stopping.")
+            self.stop_now = True
             self.firmware.stop()
         else:
             log.info("Invalid command.")
 
-    def random_movement(self):
-        turn_left = random.random()
-        degree = random.randint(60,180)
-        if turn_left < 0.5:
-            self.firmware.right_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
-        else:
-            self.firmware.left_side_turn(run_forever=False, run_by_deg=True, turn_degree=degree, running_speed=100)
+    @asyncio.coroutine
+    def random_movement(self, loop):
+        while True:
+            if self.stop_now:
+                print("STOP?")
+                # self.firmware.stop()
+                self.stop_now = True
+                SigFinish.interrupt_thread(self.random_thread)
+                self.random_thread.join()
 
 def socket_sender_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
