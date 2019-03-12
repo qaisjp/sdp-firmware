@@ -22,8 +22,7 @@ class RobotController:
                         confidence_interval=0.5)
 
         self.navigator = Navigator(self, verbose=True)
-        
-        time.sleep(10)
+
         # self.qr_reader = QRReader()
 
         threading.Thread(target=self.vision.start).start()
