@@ -1,4 +1,5 @@
 config.py
+rules.pickle.bin
 
 # ev3dev library folder
 ev3dev/

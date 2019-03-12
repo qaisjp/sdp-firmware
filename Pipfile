@@ -10,6 +10,7 @@ flake8 = "*"
 
 [packages]
 grpcio = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3"
