@@ -71,6 +71,17 @@ class Event():
         for action in self.actions:
             action.perform()
 
+    @staticmethod
+    def from_dict(dict):
+        e = Event()
+        e.event_id = dict['id']
+        e.recurrences = dict['recurrences']
+        for action in dict['actions']:
+            name = ActionName[action['name']]
+            a = Action(name, action['plant_id'], action['data'])
+            e.actions.append(a)
+        return e
+
     def __str__(self):
         recurrences = "\n        "
         if len(self.recurrences) > 0:
