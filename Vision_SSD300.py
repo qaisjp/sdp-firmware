@@ -140,7 +140,14 @@ class Vision:
             except KeyboardInterrupt:
                 self.cleanup()
                 break
-
+    def get_frame(self):
+        """
+        Returns single frame from video capture.
+        :return:    Single frame
+        """
+        return cv2.imencode(".jpg", self.cap.read())
+                
+                
     def process_frame(self, frame):
         """
         Based on constructor parameters, displays and/or sends frame through websocket.
