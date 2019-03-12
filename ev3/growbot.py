@@ -11,7 +11,6 @@ import random
 import time
 import asyncio
 from math import pi
-from remote import Remote, RPCType
 print("[IMPORT] everything else imported")
 
 
