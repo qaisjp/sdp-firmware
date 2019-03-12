@@ -2,6 +2,8 @@
 from Vision_SSD300 import Vision
 from Navigator import Navigator
 import threading
+import logging as log
+from QRReader import QRReader
 
 
 class RobotController:
@@ -18,6 +20,7 @@ class RobotController:
                         confidence_interval=0.5)
 
         self.navigator = Navigator(self, verbose=True)
+        self.qr_reader = QRReader()
 
         threading.Thread(target=self.vision.start).start()
         threading.Thread(target=self.navigator.start).start()
@@ -29,9 +32,16 @@ class RobotController:
         :return:
         """
         self.navigator.navigate(predictions)
+        if self.navigator.escape_mode:
+            # Identify QR code
+            self.qr_reader.snapshot_and_identify()
+            log.info(self.qr_reader.found_id)
+            
+
 
 
 def main():
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     RobotController()
 
 
