@@ -25,6 +25,7 @@ class RobotController:
 
         # self.qr_reader = QRReader()
 
+    def run(self):
         threading.Thread(target=self.vision.start).start()
 
     def process_visual_data(self, predictions):
@@ -42,7 +43,8 @@ class RobotController:
 
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-    RobotController()
+    r = RobotController()
+    r.run()
 
 
 if __name__ == "__main__":
