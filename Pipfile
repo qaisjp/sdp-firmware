@@ -5,9 +5,12 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+grpcio-tools = "*"
+flake8 = "*"
 
 [packages]
-growbot = "~=0.2.2"
+grpcio = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3"

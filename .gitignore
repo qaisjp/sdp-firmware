@@ -1,4 +1,8 @@
 config.py
+rules.pickle.bin
+
+# VSCode settings
+.vscode/
 
 # ev3dev library folder
 ev3dev/

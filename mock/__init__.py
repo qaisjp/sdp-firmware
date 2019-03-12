@@ -1,3 +1,5 @@
+from random import random
+
 class MockSensor:
     connected = True
     is_running = True
@@ -28,4 +30,6 @@ class MediumMotor(MockMotor):
     pass
 
 class UltrasonicSensor(MockSensor):
+    def value(self):
+        return 200 * random()
     pass
