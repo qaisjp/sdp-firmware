@@ -1,4 +1,3 @@
-from typing import List
 from enum import Enum
 from datetime import datetime, timedelta
 from dateutil import rrule
@@ -26,7 +25,7 @@ class Action():
     # plant_id: int
     # data: map
 
-    def __init__(self, name: ActionName, plant_id: int, data: map = {}):
+    def __init__(self, name, plant_id, data = {}):
         self.name = name
         self.plant_id = plant_id
         self.data = data
@@ -54,8 +53,7 @@ class Event():
 
     test = 0
 
-    def find_instances(self, before: datetime,
-                       after: datetime = datetime.now()) -> List[datetime]:
+    def find_instances(self, before, after=datetime.now()):
         """Gets a list of trigger times before max_dt."""
 
         r = rrule.rrulestr(self.recurrences[0])
@@ -122,7 +120,7 @@ class Scheduler():
         # Scheduler initiated, first read schedule from disk
         self.disk_load()
 
-    def push_events(self, events: List[Event]):
+    def push_events(self, events):
         """Updates the event list, saves to disk, and reloads the scheduler"""
 
         for event in events:
@@ -187,8 +185,8 @@ class Scheduler():
         assert self._sched.empty()
 
         # Schedule next set of events (up to next update time)
-        min_dt: datetime = datetime.now()
-        max_dt: datetime = min_dt + self.reload_freq
+        min_dt = datetime.now()
+        max_dt = min_dt + self.reload_freq
         for event in self.__events:
             for t in event.find_instances(after=min_dt, before=max_dt):
                 self._sched.enterabs(t, 0, event.trigger)
