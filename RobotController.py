@@ -42,7 +42,8 @@ class RobotController:
 
 
 def main():
-    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s",
+                    level=log.INFO, stream=sys.stdout)
 
     r = RobotController()
     asyncio.ensure_future(r.run())
