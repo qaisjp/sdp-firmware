@@ -27,6 +27,7 @@ class Navigator:
                  plant_approach_threshold=0.50,
                  escape_delay=5,
                  constant_delta=10,
+                 angle_constant=100,
                  verbose=False):
         """
         Constructor for Navigator class.
@@ -44,6 +45,7 @@ class Navigator:
         self.plant_approach_threshold = plant_approach_threshold
         self.escape_delay = escape_delay
         self.constant_delta = constant_delta
+        self.angle_constant = angle_constant
         self.verbose = verbose
 
         self.prediction_dict = {"plants": [], "obstacles": []}
@@ -206,16 +208,16 @@ class Navigator:
                 self.turning_mode = True
 
                 # Approximate angle of rotation
-                #angle = self.approximate_angle_of_rotation(plant)
+                angle = abs(self.approximate_angle_of_rotation(plant))
 
                 if self.get_bb_midpoint(plant) > self.frame_midpoint:
                     # Turn right
-                    log.info("Turning right...")
-                    self.remote_motor_controller.turn_right()
+                    log.info("Turning right by {} degrees.".format(angle))
+                    self.remote_motor_controller.turn_right(angle)
                 else:
                     # Turn left.
-                    log.info("Turning left...")
-                    self.remote_motor_controller.turn_left()
+                    log.info("Turning left by {} degrees.".format(angle))
+                    self.remote_motor_controller.turn_left(angle)
 
     def is_plant_approached(self, plant):
         """
@@ -243,9 +245,14 @@ class Navigator:
         _, ((xmin, ymin), (xmax, ymax)) = prediction
 
         return (xmax - xmin) * (ymax - ymin)
-
+    
     def approximate_angle_of_rotation(self, plant):
-        return 0
+        """
+        Get some approximation of the rotation angle.
+        :param plant:
+        :return:
+        """
+        return (self.frame_midpoint - plant[0] / self.get_bb_area(plant)) * self.angle_constant
 
     def is_centered_plant(self, plant):
         """
