@@ -18,6 +18,7 @@ class EV3_Client:
         self.front_sensor_data = None
         self.back_sensor_data = None
         self.stop_now = False
+        self.random_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
     def connect(self, sender=False):
@@ -82,7 +83,8 @@ class EV3_Client:
             log.info("Performing random turn.")
 
             rm_loop = asyncio.new_event_loop()
-            rm_thread = threading.Thread(target=self.random_movement, args=(rm_loop, rm_thread))
+            rm_thread = threading.Thread(target=self.random_movement, args=(rm_loop))
+            self.random_thread = rm_thread
             rm_thread.setDaemon(True)
             rm_thread.start()
             
@@ -99,7 +101,7 @@ class EV3_Client:
             log.info("Invalid command.")
 
     @asyncio.coroutine
-    def random_movement(self, loop, thread):
+    def random_movement(self, loop):
         turn_left = random.random()
         degree = random.randint(60,180)
         if turn_left < 0.5:
@@ -113,8 +115,8 @@ class EV3_Client:
                 print("STOP?")
                 # self.firmware.stop()
                 self.stop_now = True
-                SigFinish.interrupt_thread(thread)
-                thread.join()
+                SigFinish.interrupt_thread(self.random_thread)
+                self.random_thread.join()
                 
 
 def socket_sender_establish_loop(client, loop):
