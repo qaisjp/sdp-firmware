@@ -1,6 +1,8 @@
 from RemoteMotorController import RemoteMotorController
 import asyncio
 import threading
+from RobotController import RobotController
+from Navigator import Navigator
 
 
 def sender_action(rm, loop):
@@ -16,7 +18,9 @@ def receiver_action(rm, loop):
 
 
 def main():
-    rm = RemoteMotorController()
+    rc = RobotController()
+    nv = Navigator(rc)
+    rm = RemoteMotorController(nv)
 
     ws_sender_loop = asyncio.new_event_loop()
     ws_sender_thread = threading.Thread(target=sender_action,
@@ -35,7 +39,7 @@ def main():
     wait_loop.run_until_complete(task)
 
     while True:
-        rm.turn_left()
+        rm.turn_left(-1)
 
     asyncio.get_event_loop().run_forever()
 
