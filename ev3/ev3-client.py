@@ -81,20 +81,34 @@ class EV3_Client:
             self.ws_sender.close()
 
     def message_process(self, msg):
-        log.info("[EV3 < Pi] Received message \"{}\"".format(msg))
-        if msg == "left":
-            log.info("Turning left.")
-            self.gb.left_side_turn(running_speed=100, twin_turn=True)
-        elif msg == "right":
-            log.info("Turning right.")
-            self.gb.right_side_turn(running_speed=100, twin_turn=True)
-        elif msg == "forward":
+        package = json.loads(msg)
+        action = package["action"]
+        log.info("[EV3 < Pi] Received action \"{}\"".format(action))
+        if action == "left":
+            angle = int(package["angle"])
+            log.info("Turning left by {}.".format(angle))
+            if angle < 0:
+                self.gb.left_side_turn(running_speed=100, twin_turn=True)
+            if angle == 0:
+                pass
+            else:
+                self.gb.left_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+        elif action == "right":
+            angle = int(package["angle"])
+            log.info("Turning right by {}.".format(angle))
+            if angle < 0:
+                self.gb.right_side_turn(running_speed=100, twin_turn=True)
+            if angle == 0:
+                pass
+            else:
+                self.gb.right_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+        elif action == "forward":
             log.info("Going forward.")
             self.gb.drive_forward(running_speed=100)
-        elif msg == "backward":
+        elif action == "backward":
             log.info("Going backward.")
             self.gb.drive_backward(running_speed=100)
-        elif msg == "random":
+        elif action == "random":
             log.info("Performing random turn.")
             turn_left = random.random()
 
@@ -108,13 +122,13 @@ class EV3_Client:
             self.random_thread = rm_thread
             rm_thread.setDaemon(True)
             rm_thread.start()
-
-        elif msg == "stop":
+        elif action == "stop":
             log.info("Stopping.")
             self.stop_now = True
             self.firmware.stop()
         else:
             log.info("Invalid command.")
+            self.firmware.stop()
 
     @asyncio.coroutine
     def random_movement(self, loop):

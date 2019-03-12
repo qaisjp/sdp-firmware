@@ -56,51 +56,52 @@ class RemoteMotorController:
             msg = yield from self.ws_sender.recv()
             self.process_message(msg)
 
+
     def process_message(self, msg):
         package = json.loads(msg)
         log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(
             package["front_sensor"], package["back_sensor"]))
+    
+    def generate_action_package(self, msg):
+        out = {
+            "action": msg
+        }
+        return out
 
-    def turn_right(self):
+    def turn_right(self, deg):
         # log.info("Turning right.")
-        self.message = "right"
+        package = self.generate_action_package("right")
+        package["angle"] = deg
+        self.message = json.dumps(package)
         time.sleep(1)
 
-    def turn_left(self):
+    def turn_left(self, deg):
         # log.info("Turning left.")
-        self.message = "left"
+        package = self.generate_action_package("left")
+        package["angle"] = deg
+        self.message = json.dumps(package)
         time.sleep(1)
 
     def go_forward(self):
         # log.info("Going forward.")
-        self.message = "forward"
+        package = self.generate_action_package("forward")
+        self.message = json.dumps(package)
         time.sleep(1)
 
     def go_backward(self):
         # log.info("Going backward.")
-        self.message = "backward"
+        package = self.generate_action_package("backward")
+        self.message = json.dumps(package)
         time.sleep(1)
 
     def random_walk(self):
         # log.info("Performing random walk.")
-        self.message = "random"
+        package = self.generate_action_package("random")
+        self.message = json.dumps(package)
         time.sleep(1)
 
     def stop(self):
         # log.info("Stopping.")
-        self.message = "stop"
+        package = self.generate_action_package("stop")
+        self.message = json.dumps(package)
         time.sleep(1)
-
-
-def main():
-    rc = RemoteMotorController()
-    try:
-        rc.connect()
-        asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt:
-        log.info("Stopping server...")
-        asyncio.get_event_loop().close()
-
-
-if __name__ == "__main__":
-    main()
