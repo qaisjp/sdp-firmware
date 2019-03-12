@@ -208,16 +208,23 @@ class Navigator:
                 self.turning_mode = True
 
                 # Approximate angle of rotation
-                angle = abs(self.approximate_angle_of_rotation(plant))
+                #angle = abs(self.approximate_angle_of_rotation(plant))
 
                 if self.get_bb_midpoint(plant) > self.frame_midpoint:
                     # Turn right
-                    log.info("Turning right by {} degrees.".format(angle))
-                    self.remote_motor_controller.turn_right(angle)
+                    #log.info("Turning right by {} degrees.".format(angle))
+                    #self.remote_motor_controller.turn_right(angle)
+                    
+                    log.info("Turning right...")
+                    self.remote_motor_controller.turn_right()
                 else:
                     # Turn left.
-                    log.info("Turning left by {} degrees.".format(angle))
-                    self.remote_motor_controller.turn_left(angle)
+                    #log.info("Turning left by {} degrees.".format(angle))
+                    #self.remote_motor_controller.turn_left(angle)
+                    
+                    
+                    log.info("Turning left...")
+                    self.remote_motor_controller.turn_left()
 
     def is_plant_approached(self, plant):
         """
