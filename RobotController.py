@@ -17,7 +17,7 @@ class RobotController:
                         RobotController.model_xml,
                         RobotController.model_bin,
                         self,
-                        is_headless=False,
+                        is_headless=True,
                         live_stream=False,
                         confidence_interval=0.5)
 
