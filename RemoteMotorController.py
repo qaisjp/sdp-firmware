@@ -41,7 +41,6 @@ class RemoteMotorController:
                     self.message))
                 yield from self.ws_receiver.send(self.message)
                 self.message = None
-            pass
 
     @asyncio.coroutine
     def setup_receiver(self, websocket, path):
@@ -56,7 +55,6 @@ class RemoteMotorController:
         package = json.loads(msg)
         log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(
             package["front_sensor"], package["back_sensor"]))
-        pass
 
     def turn_right(self):
         # log.info("Turning right.")
