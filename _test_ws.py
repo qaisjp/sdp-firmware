@@ -19,12 +19,14 @@ def main():
     rm = RemoteMotorController()
 
     ws_sender_loop = asyncio.new_event_loop()
-    ws_sender_thread = threading.Thread(target=sender_action, args=(rm, ws_sender_loop,))
+    ws_sender_thread = threading.Thread(target=sender_action,
+                                        args=(rm, ws_sender_loop,))
     ws_sender_thread.setDaemon(True)
     ws_sender_thread.start()
 
     ws_receiver_loop = asyncio.new_event_loop()
-    ws_receiver_thread = threading.Thread(target=receiver_action, args=(rm, ws_receiver_loop,))
+    ws_receiver_thread = threading.Thread(target=receiver_action,
+                                          args=(rm, ws_receiver_loop,))
     ws_receiver_thread.setDaemon(True)
     ws_receiver_thread.start()
 
