@@ -10,7 +10,7 @@ import json
 
 
 class EV3_Client:
-    def __init__(self, host="10.42.0.1"):
+    def __init__(self, host="pi"):
         self.host = host
         self.est = False
         self.ws_receiver = None
