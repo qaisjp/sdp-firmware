@@ -2,7 +2,7 @@ import websockets
 import asyncio
 import sys
 import logging as log
-import firmware
+from growbot import GrowBot
 import threading
 import random
 import time
@@ -19,7 +19,7 @@ class EV3_Client:
         self.back_sensor_data = None
 
         # Battery/water levels to be implemented
-        self.gb = firmware.GrowBot(-1, -1)
+        self.gb = GrowBot(-1, -1)
 
     def connect(self, sender=False):
         log.info("INFO")
