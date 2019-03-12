@@ -13,9 +13,14 @@ class Navigator:
     Navigation module for GrowBot robot.
     """
 
-    def socket_establish_loop(self, rm, loop):
+    def sender_action(self, rm, loop):
         asyncio.set_event_loop(loop)
         rm.connect()
+        loop.run_forever()
+
+    def receiver_action(self, rm, loop):
+        asyncio.set_event_loop(loop)
+        rm.connect(sender=False, port_nr=19221)
         loop.run_forever()
 
     def __init__(self,
@@ -44,11 +49,16 @@ class Navigator:
 
         self.remote_motor_controller = RemoteMotorController()
 
-        # Establish websocket connection to a new background thread
-        ws_loop = asyncio.new_event_loop()
-        ws_thread = threading.Thread(target=self.socket_establish_loop, args=(self.remote_motor_controller, ws_loop,))
-        ws_thread.setDaemon(True)
-        ws_thread.start()
+        # Establish two websocket connections to new background threads
+        ws_sender_loop = asyncio.new_event_loop()
+        ws_sender_thread = threading.Thread(target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
+        ws_sender_thread.setDaemon(True)
+        ws_sender_thread.start()
+
+        ws_receiver_loop = asyncio.new_event_loop()
+        ws_receiver_thread = threading.Thread(target=self.receiver_action, args=(self.remote_motor_controller, ws_receiver_loop,))
+        ws_receiver_thread.setDaemon(True)
+        ws_receiver_thread.start()
 
         self.frame_width = 640
         self.frame_height = 480

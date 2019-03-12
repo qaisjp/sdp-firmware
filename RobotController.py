@@ -3,6 +3,7 @@ from Vision_SSD300 import Vision
 from Navigator import Navigator
 import threading
 import logging as log
+import sys
 from QRReader import QRReader
 
 
