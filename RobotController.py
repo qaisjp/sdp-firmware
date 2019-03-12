@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from Vision_SSD300 import Vision
 from Navigator import Navigator
-import time
 import threading
 import logging as log
 import sys
+import asyncio
 from QRReader import QRReader
 
 
@@ -25,7 +25,7 @@ class RobotController:
 
         # self.qr_reader = QRReader()
 
-    def run(self):
+    async def run(self):
         threading.Thread(target=self.vision.start).start()
 
     def process_visual_data(self, predictions):
@@ -43,8 +43,13 @@ class RobotController:
 
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+
     r = RobotController()
-    r.run()
+    asyncio.ensure_future(r.run())
+
+    loop = asyncio.get_event_loop()
+    pending = asyncio.Task.all_tasks()
+    loop.run_until_complete(asyncio.gather(*pending))
 
 
 if __name__ == "__main__":
