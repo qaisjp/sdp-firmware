@@ -5,7 +5,9 @@ import threading
 import logging as log
 import sys
 import asyncio
-from QRReader import QRReader
+import config
+from remote import Remote, RPCType
+from scheduler import Scheduler
 
 
 class RobotController:
@@ -22,10 +24,26 @@ class RobotController:
                         confidence_interval=0.5)
 
         self.navigator = Navigator(self, verbose=True)
-
+        self.scheduler = Scheduler()
         # self.qr_reader = QRReader()
 
-    async def run(self):
+        asyncio.ensure_future(self.__start_vision())
+        asyncio.ensure_future(self.scheduler.run())
+
+        # Instantiate and use remote
+        if config.RESPOND_TO_API:
+            host = config.API_HOST
+            if config.API_SECURE:
+                host = "wss://"+host
+            else:
+                host = "ws://"+host
+
+            self.remote = Remote(config.UUID, host)
+            self.remote.add_callback(RPCType.EVENTS, lambda d: print(d))
+
+            asyncio.ensure_future(self.remote.connect())
+
+    async def __start_vision(self):
         threading.Thread(target=self.vision.start).start()
 
     def process_visual_data(self, predictions):
@@ -45,8 +63,7 @@ def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s",
                     level=log.INFO, stream=sys.stdout)
 
-    r = RobotController()
-    asyncio.ensure_future(r.run())
+    RobotController()
 
     loop = asyncio.get_event_loop()
     pending = asyncio.Task.all_tasks()
