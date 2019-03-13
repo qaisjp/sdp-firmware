@@ -73,20 +73,20 @@ class EV3_Client:
             angle = int(package["angle"])
             log.info("Turning left by {}.".format(angle))
             if angle < 0:
-                self.firmware.left_side_turn(running_speed=100, twin_turn=True)
+                self.firmware.left_side_turn(running_speed=75, twin_turn=True)
             elif angle == 0:
                 pass
             else:
-                self.firmware.left_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "right":
             angle = int(package["angle"])
             log.info("Turning right by {}.".format(angle))
             if angle < 0:
-                self.firmware.right_side_turn(running_speed=100, twin_turn=True)
+                self.firmware.right_side_turn(running_speed=75, twin_turn=True)
             elif angle == 0:
                 pass
             else:
-                self.firmware.right_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                self.firmware.right_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "forward":
             log.info("Going forward.")
             self.firmware.drive_forward(running_speed=100)
