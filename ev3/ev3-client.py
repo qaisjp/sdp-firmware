@@ -30,8 +30,8 @@ class EV3_Client:
             else:
                 log.info("Connecting sender to Pi sender...")
                 asyncio.get_event_loop().run_until_complete(self.setup_sender())
-        finally:
-            pass
+        except KeyboardInterrupt:
+            self.firmware.stop()
 
     @asyncio.coroutine
     def setup_receiver(self, port_nr=8866):
@@ -140,17 +140,20 @@ def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     ev3 = EV3_Client()
 
-    ws_receiver = asyncio.new_event_loop()
-    ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
-    ws_receiver_thread.setDaemon(True)
-    ws_receiver_thread.start()
+    try:
+        ws_receiver = asyncio.new_event_loop()
+        ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
+        ws_receiver_thread.setDaemon(True)
+        ws_receiver_thread.start()
 
-    ws_sender = asyncio.new_event_loop()
-    ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
-    ws_sender_thread.setDaemon(True)
-    ws_sender_thread.start()
+        ws_sender = asyncio.new_event_loop()
+        ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
+        ws_sender_thread.setDaemon(True)
+        ws_sender_thread.start()
 
-    asyncio.get_event_loop().run_forever()
+        asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt:
+        ev3.firmware.stop()
 
 if __name__ == "__main__":
     main()
