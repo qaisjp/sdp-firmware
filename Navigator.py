@@ -61,7 +61,7 @@ class Navigator:
         self.frame_area = self.frame_width * self.frame_height
 
         self.remote_motor_controller = RemoteMotorController()
-        
+
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
         ws_sender_thread = threading.Thread(target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
@@ -271,3 +271,21 @@ class Navigator:
         :return:            Dynamic delta value
         """
         return self.constant_delta / (self.get_bb_area(plant) / self.frame_area)
+
+    def remote_move(self, direction):
+        if direction == "forward":
+            self.remote_motor_controller.go_forward()
+        elif direction == "backward":
+            self.remote_motor_controller.go_backward()
+        elif direction == "left":
+            self.remote_motor_controller.turn_left()
+        elif direction == "right":
+            self.remote_motor_controller.turn_right()
+        elif direction == "brake":
+            self.remote_motor_controller.stop()
+        elif direction == "armup":
+            print('armup')
+        elif direction == "armdown":
+            print('armdown')
+        else:
+            print("Unknown direction received")

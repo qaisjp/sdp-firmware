@@ -36,7 +36,7 @@ class RobotController:
 
             self.remote = Remote(config.UUID, host)
             self.remote.add_callback(
-                RPCType.MOVE_IN_DIRECTION, self.remote_move)
+                RPCType.MOVE_IN_DIRECTION, self.navigator.remote_move)
             self.remote.add_callback(
                 RPCType.EVENTS, self.on_events_received)
 
@@ -63,24 +63,6 @@ class RobotController:
 
     def on_events_received(self, data):
         self.sched.push_events(list(map(Event.from_dict, data)))
-
-    def remote_move(self, direction):
-        if direction == "forward":
-            print("drive forward")
-        elif direction == "backward":
-            print('drive backward')
-        elif direction == "left":
-            print('left turn')
-        elif direction == "right":
-            print('right turn')
-        elif direction == "brake":
-            print('brake')
-        elif direction == "armup":
-            print('armup')
-        elif direction == "armdown":
-            print('armdown')
-        else:
-            print("Unknown direction received")
 
 
 def main():
