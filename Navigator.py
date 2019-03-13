@@ -5,7 +5,6 @@ import threading
 import asyncio
 import time
 
-
 class Navigator:
     """
     Navigation module for GrowBot robot.
@@ -53,6 +52,7 @@ class Navigator:
         self.turning_mode = False
         self.follow_mode = False
         self.escape_mode = False
+        self.escape_mode_time = time.time()
 
         # Frame details.
         self.frame_width = 640
@@ -95,6 +95,12 @@ class Navigator:
         Changes state of the class after new predictions are received.
         :return:
         """
+
+        if self.escape_mode:
+            if (time.time() - self.escape_mode_time) >= self.escape_delay:
+                self.escape_mode = False
+                log.info("Escape mode disabled.")
+
         if self.prediction_dict["plants"]:
             # Plant detected.
 
@@ -171,7 +177,7 @@ class Navigator:
             else:
                 # Plant is in front of the robot. Stop the robot and switch to escape mode.
                 log.info("Plant approached.")
-                self.escape_mode = True
+                self.enable_escape_mode()
                 self.follow_mode = False
                 self.remote_motor_controller.stop()
 
@@ -183,7 +189,7 @@ class Navigator:
                 self.remote_motor_controller.random_walk()
 
                 # Disable escape mode after escape_delay seconds.
-                # threading.Thread(target=self.disable_escape_mode).start()
+                self.disable_escape_mode_threaded()
         else:
             # Plant isn't centered. Turn right/left.
             log.info("Plant not in the centre.")
@@ -204,6 +210,11 @@ class Navigator:
                     log.info("Turning left...")
                     self.remote_motor_controller.turn_left()
 
+    def enable_escape_mode(self):
+        self.escape_mode_time = time.time()
+        self.escape_mode = True
+        log.info("Escape mode enabled.")
+
     def is_plant_approached(self, plant):
         """
         Checks if plant has been approach by computing bounding box area to frame area.
@@ -211,15 +222,6 @@ class Navigator:
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
         return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
-
-    def disable_escape_mode(self):
-        """
-        This function gives the robot time to look around before following next plant.
-        :return:
-        """
-        time.sleep(self.escape_delay)
-        self.escape_mode = False
-        log.info("Escape mode disabled.")
 
     def get_bb_area(self, prediction):
         """
