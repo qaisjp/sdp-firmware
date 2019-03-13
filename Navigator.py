@@ -204,11 +204,11 @@ class Navigator:
                 if self.get_bb_midpoint(plant) > self.frame_midpoint:
                     # Turn right
                     log.info("Turning right...")
-                    self.remote_motor_controller.turn_right()
+                    self.remote_motor_controller.turn_right(-1)
                 else:
                     # Turn left.
                     log.info("Turning left...")
-                    self.remote_motor_controller.turn_left()
+                    self.remote_motor_controller.turn_left(-1)
 
     def enable_escape_mode(self):
         self.escape_mode_time = time.time()
@@ -280,9 +280,9 @@ class Navigator:
         elif direction == "backward":
             self.remote_motor_controller.go_backward()
         elif direction == "left":
-            self.remote_motor_controller.turn_left()
+            self.remote_motor_controller.turn_left(-1)
         elif direction == "right":
-            self.remote_motor_controller.turn_right()
+            self.remote_motor_controller.turn_right(-1)
         elif direction == "brake":
             self.remote_motor_controller.stop()
         elif direction == "armup":
