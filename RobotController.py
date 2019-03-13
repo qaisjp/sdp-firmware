@@ -22,7 +22,7 @@ class RobotController:
                         confidence_interval=0.5)
 
         self.navigator = Navigator(self, verbose=True)
-        
+
         time.sleep(10)
         # self.qr_reader = QRReader()
 
@@ -39,6 +39,26 @@ class RobotController:
 
     def on_plant_found(self):
         pass
+
+    def remote_move(self, direction):
+        print("Start: moving in direction {}".format(direction))
+        if direction == "forward":
+            self.drive_forward()
+        elif direction == "backward":
+            self.drive_backward()
+        elif direction == "left":
+            self.left_side_turn()
+        elif direction == "right":
+            self.right_side_turn()
+        elif direction == "brake":
+            self.stop()
+        elif direction == "armup":
+            self.raise_arm()
+        elif direction == "armdown":
+            self.lower_arm()
+        else:
+            print("Unknown direction received")
+        print("End: moving in direction {}".format(direction))
 
 
 def main():

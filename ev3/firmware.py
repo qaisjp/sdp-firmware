@@ -199,26 +199,6 @@ class GrowBot:
     def switch_stop_on_obstacle(self, value):
         self.stop_on_obstacle = value
 
-    def remote_move(self, direction):
-        print("Start: moving in direction {}".format(direction))
-        if direction == "forward":
-            self.drive_forward()
-        elif direction == "backward":
-            self.drive_backward()
-        elif direction == "left":
-            self.left_side_turn()
-        elif direction == "right":
-            self.right_side_turn()
-        elif direction == "brake":
-            self.stop()
-        elif direction == "armup":
-            self.raise_arm()
-        elif direction == "armdown":
-            self.lower_arm()
-        else:
-            print("Unknown direction received")
-        print("End: moving in direction {}".format(direction))
-
 
 def main():
     gb = GrowBot(-1, -1)
