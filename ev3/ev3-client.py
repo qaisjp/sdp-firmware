@@ -73,26 +73,26 @@ class EV3_Client:
             angle = int(package["angle"])
             log.info("Turning left by {}.".format(angle))
             if angle < 0:
-                self.gb.left_side_turn(running_speed=100, twin_turn=True)
+                self.firmware.left_side_turn(running_speed=100, twin_turn=True)
             if angle == 0:
                 pass
             else:
-                self.gb.left_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                self.firmware.left_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "right":
             angle = int(package["angle"])
             log.info("Turning right by {}.".format(angle))
             if angle < 0:
-                self.gb.right_side_turn(running_speed=100, twin_turn=True)
+                self.firmware.right_side_turn(running_speed=100, twin_turn=True)
             if angle == 0:
                 pass
             else:
-                self.gb.right_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                self.firmware.right_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "forward":
             log.info("Going forward.")
-            self.gb.drive_forward(running_speed=100)
+            self.firmware.drive_forward(running_speed=100)
         elif action == "backward":
             log.info("Going backward.")
-            self.gb.drive_backward(running_speed=100)
+            self.firmware.drive_backward(running_speed=100)
         elif action == "random":
             log.info("Performing random turn.")
             turn_left = random.random()
