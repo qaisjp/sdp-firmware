@@ -64,7 +64,7 @@ class Navigator:
         self.frame_area = self.frame_width * self.frame_height
 
         self.remote_motor_controller = RemoteMotorController(self)
-        
+
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
         ws_sender_thread = threading.Thread(target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
@@ -214,17 +214,17 @@ class Navigator:
                     # Turn right
                     #log.info("Turning right by {} degrees.".format(angle))
                     #self.remote_motor_controller.turn_right(angle)
-                    
+
                     log.info("Turning right...")
-                    self.remote_motor_controller.turn_right()
+                    self.remote_motor_controller.turn_right(-1)
                 else:
                     # Turn left.
                     #log.info("Turning left by {} degrees.".format(angle))
                     #self.remote_motor_controller.turn_left(angle)
-                    
-                    
+
+
                     log.info("Turning left...")
-                    self.remote_motor_controller.turn_left()
+                    self.remote_motor_controller.turn_left(-1)
 
     def is_plant_approached(self, plant):
         """
@@ -252,7 +252,7 @@ class Navigator:
         _, ((xmin, ymin), (xmax, ymax)) = prediction
 
         return (xmax - xmin) * (ymax - ymin)
-    
+
     def approximate_angle_of_rotation(self, plant):
         """
         Get some approximation of the rotation angle.
