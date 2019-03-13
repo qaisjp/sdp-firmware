@@ -74,7 +74,7 @@ class EV3_Client:
             log.info("Turning left by {}.".format(angle))
             if angle < 0:
                 self.firmware.left_side_turn(running_speed=100, twin_turn=True)
-            if angle == 0:
+            elif angle == 0:
                 pass
             else:
                 self.firmware.left_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
@@ -83,7 +83,7 @@ class EV3_Client:
             log.info("Turning right by {}.".format(angle))
             if angle < 0:
                 self.firmware.right_side_turn(running_speed=100, twin_turn=True)
-            if angle == 0:
+            elif angle == 0:
                 pass
             else:
                 self.firmware.right_side_turn(running_speed=100, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
