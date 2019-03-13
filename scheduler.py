@@ -27,23 +27,24 @@ class Action():
     # plant_id: int
     # data: map
 
-    def __init__(self, name, plant_id, data = {}):
+    def __init__(self, name, plant_id, data={}):
         self.name = name
         self.plant_id = plant_id
         self.data = data
 
     def perform(self):
         if self.name == ActionName.PLANT_WATER:
-            log.warn("[SCHED] Supposed to water plant_id {} and data {}".format(
+            log.warn("[SCHED] Watering plant_id {} & data {}".format(
                 self.plant_id, self.data))
         elif self.name == ActionName.PLANT_CAPTURE_PHOTO:
-            log.warn("[SCHED] Supposed to take picture of plant_id {} and data {}".format(
+            log.warn("[SCHED] Taking pic of plant_id {} & data {}".format(
                 self.plant_id, self.data))
         elif self.name == ActionName.EVENT_RANDOM_MOVEMENT:
             log.warn("[SCHED] Supposed to randomly move")
         else:
-            log.warn("[SCHED] Unknown action: name: {}, plant_id: {}, data: {}".format(
-                self.name, self.plant_id, self.data))
+            log.warn("[SCHED] Unknown action: "
+                     "name: {}, plant_id: {}, data: {}".format(
+                      self.name, self.plant_id, self.data))
 
     def __str__(self):
         return "Action(name={}, plant_id={}, data={})".format(
