@@ -4,7 +4,7 @@ from Navigator import Navigator
 import threading
 import logging as log
 import sys
-from scheduler import Scheduler
+from scheduler import Scheduler, Event
 from remote import Remote, RPCType
 import config
 import asyncio
@@ -62,7 +62,7 @@ class RobotController:
         pass
 
     def on_events_received(self, data):
-        print(data)
+        self.sched.push_events(list(map(Event.from_dict, data)))
 
     def remote_move(self, direction):
         if direction == "forward":
