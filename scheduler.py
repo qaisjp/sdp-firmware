@@ -19,6 +19,7 @@ def datetime_sleep(dt: datetime):
 class ActionName(Enum):
     PLANT_WATER = 0
     PLANT_CAPTURE_PHOTO = 1
+    ROBOT_RANDOM_MOVEMENT = 2
 
 
 class Action():
@@ -38,6 +39,8 @@ class Action():
         elif self.name == ActionName.PLANT_CAPTURE_PHOTO:
             log.warn("[SCHED] Supposed to take picture of plant_id {} and data {}".format(
                 self.plant_id, self.data))
+        elif self.name == ActionName.EVENT_RANDOM_MOVEMENT:
+            log.warn("[SCHED] Supposed to randomly move")
         else:
             log.warn("[SCHED] Unknown action: name: {}, plant_id: {}, data: {}".format(
                 self.name, self.plant_id, self.data))
