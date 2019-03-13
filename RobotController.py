@@ -8,6 +8,7 @@ from scheduler import Scheduler, Event
 from remote import Remote, RPCType
 import config
 import asyncio
+import os
 
 
 class RobotController:
@@ -66,6 +67,11 @@ class RobotController:
 
 
 def main():
+    if os.getenv("http_proxy") is not None:
+        print("You are a monster.")
+        print("Use start.sh. Do not run this Python file yourself.")
+        return
+
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     RobotController()
 
