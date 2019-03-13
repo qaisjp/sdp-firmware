@@ -145,8 +145,9 @@ class Vision:
         Returns single frame from video capture.
         :return:    Single frame
         """
-        return cv2.imencode(".jpg", self.cap.read())
-                
+        _, frame = self.cap.read()
+
+        return base64.b64encode(cv2.imencode(".jpg", frame))
                 
     def process_frame(self, frame):
         """
