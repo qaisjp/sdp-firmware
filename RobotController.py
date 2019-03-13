@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 from Vision_SSD300 import Vision
 from Navigator import Navigator
-import time
 import threading
 import logging as log
 import sys
-from QRReader import QRReader
 from scheduler import Scheduler
 from remote import Remote, RPCType
 import config
 import asyncio
+
 
 class RobotController:
     model_xml = '/home/student/ssd300.xml'
@@ -38,6 +37,8 @@ class RobotController:
             self.remote = Remote(config.UUID, host)
             self.remote.add_callback(
                 RPCType.MOVE_IN_DIRECTION, self.remote_move)
+            self.remote.add_callback(
+                RPCType.EVENTS, self.on_events_received)
 
             threading.Thread(target=self.thread_remote, daemon=True).start()
 
@@ -47,7 +48,6 @@ class RobotController:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.remote.connect())
-
 
     def process_visual_data(self, predictions):
         """
@@ -61,8 +61,10 @@ class RobotController:
     def on_plant_found(self):
         pass
 
+    def on_events_received(self, data):
+        print(data)
+
     def remote_move(self, direction):
-        print("Start: moving in direction {}".format(direction))
         if direction == "forward":
             print("drive forward")
         elif direction == "backward":
@@ -79,7 +81,6 @@ class RobotController:
             print('armdown')
         else:
             print("Unknown direction received")
-        print("End: moving in direction {}".format(direction))
 
 
 def main():
