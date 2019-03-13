@@ -189,7 +189,7 @@ class Navigator:
                 self.remote_motor_controller.random_walk()
 
                 # Disable escape mode after escape_delay seconds.
-                self.disable_escape_mode_threaded()
+                # self.disable_escape_mode_threaded()
         else:
             # Plant isn't centered. Turn right/left.
             log.info("Plant not in the centre.")
