@@ -141,6 +141,15 @@ class Vision:
                 self.cleanup()
                 break
 
+    def get_frame(self):
+        """
+        Returns single frame from video capture.
+        :return:    Single frame
+        """
+        _, frame = self.cap.read()
+
+        return base64.b64encode(cv2.imencode(".jpg", frame))
+
     def process_frame(self, frame):
         """
         Based on constructor parameters, displays and/or sends frame through websocket.
