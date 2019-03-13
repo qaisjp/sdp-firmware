@@ -11,6 +11,7 @@ class RPCType(Enum):
     MOVE_IN_DIRECTION = "move"
     DEMO_START = "demo/start"
     SETTINGS_PATCH = "settings/patch"
+    EVENTS = "events"
 
 class Remote(object):
     def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
@@ -34,6 +35,17 @@ class Remote(object):
             else:
                 print("Uncaught message for type", type, "with data", data)
 
+    def plant_capture_photo(self, plant_id: int, image):
+        body = {
+            'type': "PLANT_CAPTURE_PHOTO",
+            'data': {
+                plant_id: plant_id,
+                image: image,  # Must be base64 encoded
+            }
+        }
+
+        self.ws.send(body)
+
     def close(self):
         self.ws.close()
 
@@ -50,5 +62,7 @@ class Remote(object):
             fn(data)
         elif type == RPCType.SETTINGS_PATCH:
             fn(data["Key"], data["Value"])
+        elif type == RPCType.EVENTS:
+            fn(data)
         else:
             raise UnhandledRPCTranslationException()

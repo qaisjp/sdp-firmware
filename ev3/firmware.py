@@ -26,7 +26,7 @@ class GrowBot:
         self.right_motor = ev3.LargeMotor('outB')
         self.arm_motor = ev3.LargeMotor('outC')
         self.front_sensor = ev3.UltrasonicSensor('in1')
-        # self.back_sensor = ev3.UltrasonicSensor('in2')
+        self.back_sensor = ev3.UltrasonicSensor('in2')
 
         self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
         self.motor_running_speed = 500 # Default running speed to both mobilisation motors
@@ -49,8 +49,8 @@ class GrowBot:
             raise IOError("Plug the arm motor into Port OutC.")
         if not self.front_sensor.connected:
             raise IOError("Plug the front sensor into Port In1.")
-        # if not self.back_sensor.connected:
-        #     raise IOError("Plug the back sensor into Port In2.`")
+        if not self.back_sensor.connected:
+            raise IOError("Plug the back sensor into Port In2.`")
 
     def raise_arm(self, running_speed=None, running_time=None, running_rotations=None):
         # Using default params
@@ -60,7 +60,7 @@ class GrowBot:
             running_time = self.motor_running_time
         if running_rotations is None:
             running_rotations = self.arm_rotation_count
-        
+
         running_count = -self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
         # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
         self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
@@ -74,7 +74,7 @@ class GrowBot:
             running_time = self.motor_running_time
         if running_rotations is None:
             running_rotations = self.arm_rotation_count
-        
+
         running_count = self.arm_motor.count_per_rot * self.arm_rotation_count # Tacho counts for the requested rotations
         # Run to targeted position, and sleep for the duration of the manouvure to avoid command overlap
         self.arm_motor.run_to_rel_pos(position_sp=running_count, speed_sp=running_speed, stop_action="hold")
@@ -107,7 +107,8 @@ class GrowBot:
         else:
             self.left_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
             self.right_motor.run_forever(speed_sp=int(running_speed), time_sp=running_time * 1000)
-            time.sleep(running_time)
+            for _ in range(100):
+                time.sleep(running_time / 100)
 
     def left_side_turn(self, run_forever=True, run_by_deg=False, run_by_time=False, running_time=None, running_speed=None, turn_degree=None, twin_turn=False):
         # Default parameters
@@ -195,29 +196,30 @@ class GrowBot:
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value
-    
+
     def switch_stop_on_obstacle(self, value):
         self.stop_on_obstacle = value
 
-    def remote_move(self, direction):	
-        print("Start: moving in direction {}".format(direction))	
-        if direction == "forward":	
+    def remote_move(self, direction):
+        print("Start: moving in direction {}".format(direction))
+        if direction == "forward":
             self.drive_forward()
-        elif direction == "backward":	
-            self.drive_backward()	
-        elif direction == "left":	
+        elif direction == "backward":
+            self.drive_backward()
+        elif direction == "left":
             self.left_side_turn()
-        elif direction == "right":	
-            self.right_side_turn()	
-        elif direction == "brake":	
-            self.stop()	
+        elif direction == "right":
+            self.right_side_turn()
+        elif direction == "brake":
+            self.stop()
         elif direction == "armup":
             self.raise_arm()
         elif direction == "armdown":
             self.lower_arm()
-        else:	
-            print("Unknown direction received")	
+        else:
+            print("Unknown direction received")
         print("End: moving in direction {}".format(direction))
+
 
 def main():
     gb = GrowBot(-1, -1)
@@ -226,6 +228,8 @@ def main():
         create_task = getattr(asyncio, 'async')
     else:
         create_task = getattr(asyncio, 'ensure_future')
+
+    # TODO: add avoidance breaks
 
     # Instantiate and use remote
     if config.RESPOND_TO_API:
@@ -242,6 +246,7 @@ def main():
     loop = asyncio.get_event_loop()
     pending = asyncio.Task.all_tasks()
     loop.run_until_complete(asyncio.gather(*pending))
+
 
 if __name__ == "__main__":
     print("[MAIN] Running!")
