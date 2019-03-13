@@ -43,19 +43,19 @@ class RobotController:
     def remote_move(self, direction):
         print("Start: moving in direction {}".format(direction))
         if direction == "forward":
-            self.drive_forward()
+            print("drive forward")
         elif direction == "backward":
-            self.drive_backward()
+            print('drive backward')
         elif direction == "left":
-            self.left_side_turn()
+            print('left turn')
         elif direction == "right":
-            self.right_side_turn()
+            print('right turn')
         elif direction == "brake":
-            self.stop()
+            print('brake')
         elif direction == "armup":
-            self.raise_arm()
+            print('armup')
         elif direction == "armdown":
-            self.lower_arm()
+            print('armdown')
         else:
             print("Unknown direction received")
         print("End: moving in direction {}".format(direction))
