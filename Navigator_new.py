@@ -4,6 +4,7 @@ import sys
 import threading
 import asyncio
 import time
+import pickle
 
 class Navigator:
     """
@@ -25,7 +26,7 @@ class Navigator:
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.50,
                  escape_delay=5,
-                 constant_delta=20,
+                 constant_delta=10,
                  verbose=False):
         """
         Constructor for Navigator class.
@@ -61,6 +62,12 @@ class Navigator:
         self.frame_area = self.frame_width * self.frame_height
 
         self.remote_motor_controller = RemoteMotorController()
+
+        # Load linear model
+        fname = "/home/student/angle_model.pkl"
+
+        with open(fname, 'rb') as file:
+            self.angle_model = pickle.load(file)
 
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
@@ -199,16 +206,16 @@ class Navigator:
                 self.turning_mode = True
 
                 # Approximate angle of rotation
-                #angle = self.approximate_angle_of_rotation(plant)
+                angle = abs(self.approximate_angle_of_rotation(plant))
 
                 if self.get_bb_midpoint(plant) > self.frame_midpoint:
                     # Turn right
-                    log.info("Turning right...")
-                    self.remote_motor_controller.turn_right(-1)
+                    log.info("Turning right by {} degrees...".format(angle))
+                    self.remote_motor_controller.turn_right(angle)
                 else:
                     # Turn left.
-                    log.info("Turning left...")
-                    self.remote_motor_controller.turn_left(-1)
+                    log.info("Turning left by {} degrees...".format(angle))
+                    self.remote_motor_controller.turn_left(angle)
 
     def enable_escape_mode(self):
         self.escape_mode_time = time.time()
@@ -234,7 +241,14 @@ class Navigator:
         return (xmax - xmin) * (ymax - ymin)
 
     def approximate_angle_of_rotation(self, plant):
-        return 0
+        area = self.get_bb_area(plant)
+        midpoint = self.get_bb_midpoint(plant)
+
+        delta = self.frame_midpoint - midpoint
+
+        angle = self.angle_model.predict([area, delta])
+
+        return angle
 
     def is_centered_plant(self, plant):
         """
