@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from Vision_SSD300 import Vision
 from Navigator import Navigator
+from QRReader import QRReader
 import threading
 import logging as log
 import sys
@@ -26,7 +27,7 @@ class RobotController:
 
         self.navigator = Navigator(self, verbose=True)
         self.sched = Scheduler()
-        # self.qr_reader = QRReader()
+        self.qr_reader = QRReader()
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
