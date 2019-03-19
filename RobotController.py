@@ -66,8 +66,12 @@ class RobotController:
         pass
 
     def on_plant_seen(self):
-        self.qr_reader.identify(self.received_frame)
-        print(self.qr_reader.found_id)
+        qr_codes = self.qr_reader.identify(self.received_frame)
+        if len(qr_codes) == 0:
+            log.warning("No plant QR found.")
+        else:
+            for qr in qr_codes:
+                log.info("Plant QR found: {}".format(qr))
 
     def on_events_received(self, data):
         self.sched.push_events(list(map(Event.from_dict, data)))
