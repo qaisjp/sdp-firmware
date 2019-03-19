@@ -20,7 +20,7 @@ class QRReader:
                 qr_string = qr.data.decode("utf-8")
                 # Update the QR code that this object holds, if any
                 if not qr_string.startswith("growbot:plant:"):
-                    log.info("QR code not valid")
+                    log.info("QR code not valid: {}".format(qr_string))
                 else:
                     qr_codes.add(qr_string)
             return qr_codes
