@@ -27,6 +27,7 @@ class RobotController:
 
         self.navigator = Navigator(self, verbose=True)
         self.sched = Scheduler()
+        self.received_frame = None
         self.qr_reader = QRReader()
 
         if config.RESPOND_TO_API:
@@ -51,19 +52,24 @@ class RobotController:
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.remote.connect())
 
-    def process_visual_data(self, predictions):
+    def process_visual_data(self, predictions, frame):
         """
         Forwards messages to navigator instance.
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
 
+        self.received_frame = frame
         self.navigator.on_new_frame(predictions)
 
-    def on_plant_found(self):
+    def on_plant_approached(self):
         pass
 
-    def on_events_received(self, data):
+    def on_plant_seen(self):
+        self.qr_reader.identify(self.received_frame)
+        print(self.qr_reader.found_id)
+
+    def on_events_found(self, data):
         self.sched.push_events(list(map(Event.from_dict, data)))
 
 

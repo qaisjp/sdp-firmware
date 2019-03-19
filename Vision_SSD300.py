@@ -117,7 +117,7 @@ class Vision:
                 res = self.exec_net.requests[cur_request_id].outputs[self.out_blob]
 
                 predictions = [self.process_prediction(frame, pred) for pred in res[0][0] if self.check_threshold(pred[2])]
-                self.robot_controller.process_visual_data(predictions)
+                self.robot_controller.process_visual_data(predictions, frame)
 
                 # Display frame
                 self.process_frame(frame)
