@@ -62,14 +62,14 @@ class RobotController:
         self.received_frame = frame
         self.navigator.on_new_frame(predictions)
 
-    def on_plant_approached(self):
+    def on_plant_found(self):
         pass
 
     def on_plant_seen(self):
         self.qr_reader.identify(self.received_frame)
         print(self.qr_reader.found_id)
 
-    def on_events_found(self, data):
+    def on_events_received(self, data):
         self.sched.push_events(list(map(Event.from_dict, data)))
 
 
