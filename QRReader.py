@@ -4,33 +4,33 @@ from pyzbar.pyzbar import decode
 from time import sleep
 import cv2
 import imutils
-from imutils.video import VideoStream
 import logging as log
 import sys
 
 class QRReader:
     def __init__(self):
-        self.camera = PiCamera()
-        self.camera.resolution = (1024, 768)
         self.found_id = None
 
-    def snapshot_and_identify(self):
+    def identify(self, frame):
         try:
-            # Take a picture using PiCamera
-            output_location = "dummy.jpg"
-            self.camera.capture(output_location)
-
             # Read the saved picture into PIL frame
-            frame = cv2.imread(output_location)
             decoded = decode(frame)
+            qr_codes = set()
             for qr in decoded:
+                qr_string = qr.data.decode("utf-8")
                 # Update the QR code that this object holds, if any
-                self.found_id = qr.data
+                if not qr_string.startswith("growbot:plant:"):
+                    log.info("QR code not valid: {}".format(qr_string))
+                else:
+                    qr_codes.add(qr_string)
+            return qr_codes
         finally:
             pass
 
+
 # QR capture, using PiCamera library.
 def main():
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     sleep(2) # Camera warm-up
 
 if __name__ == "__main__":

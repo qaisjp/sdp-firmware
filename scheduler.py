@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dateutil import rrule
 from itertools import takewhile
 import logging as log
@@ -12,7 +12,7 @@ import asyncio
 
 def datetime_sleep(dt: datetime):
     """Sleeps until dt"""
-    delta = dt - datetime.now()
+    delta = dt - datetime.now(timezone.utc)
     yield from asyncio.sleep(delta.total_seconds())
 
 
@@ -58,7 +58,7 @@ class Event():
 
     test = 0
 
-    def find_instances(self, before, after=datetime.now()):
+    def find_instances(self, before, after=datetime.now(timezone.utc)):
         """Gets a list of trigger times before max_dt."""
 
         r = rrule.rrulestr(self.recurrences[0])
@@ -190,7 +190,7 @@ class Scheduler():
         assert self._sched.empty()
 
         # Schedule next set of events (up to next update time)
-        min_dt = datetime.now()
+        min_dt = datetime.now(timezone.utc)
         max_dt = min_dt + self.reload_freq
         for event in self.__events:
             for t in event.find_instances(after=min_dt, before=max_dt):

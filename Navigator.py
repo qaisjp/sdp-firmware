@@ -116,6 +116,7 @@ class Navigator:
                     self.follow_plant_aux(plant)
             else:
                 # Operating in normal mode.
+                self.robot_controller.on_plant_seen()
                 self.follow_plant_aux(plant)
         else:
             # Plant not detected. Perform random search if not searching already.
