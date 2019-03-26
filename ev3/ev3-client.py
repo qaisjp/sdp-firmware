@@ -70,14 +70,17 @@ class EV3_Client:
         action = package["action"]
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
         if action == "left":
-            angle = int(package["angle"])
-            log.info("Turning left by {}.".format(angle))
-            if angle < 0:
-                self.firmware.left_side_turn(running_speed=75, twin_turn=True)
-            elif angle == 0:
-                pass
+            if package["turn_timed"]:
+                time = int(package["turn_turnTime"])
             else:
-                self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                angle = int(package["angle"])
+                log.info("Turning left by {}.".format(angle))
+                if angle < 0:
+                    self.firmware.left_side_turn(running_speed=75, twin_turn=True)
+                elif angle == 0:
+                    pass
+                else:
+                    self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "right":
             angle = int(package["angle"])
             log.info("Turning right by {}.".format(angle))
@@ -176,6 +179,21 @@ class EV3_Client:
         while self.random_thread.is_alive():
             log.info("Waiting for thread to finish...")
         self.random_turn() # Continue to random turning
+
+    def timed_turn(self, loop, turn_time):
+        timer = time.time()
+        # While timer is not up, loop and listen for stop signals
+        while time.time() - timer < turn_time:
+            if self.stop_now:
+                print("STOP?")
+                # self.firmware.stop()
+                self.stop_now = True
+                SigFinish.interrupt_thread(self.random_thread)
+                self.random_thread.join()
+        log.info("Finished turning,.")
+        self.stop_now = True
+        self.firmware.stop()
+        # And?
         
         
 def socket_sender_establish_loop(client, loop):

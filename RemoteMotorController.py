@@ -63,10 +63,26 @@ class RemoteMotorController:
         self.message = json.dumps(package)
         time.sleep(1)
 
+    def turn_right_timed(self, time):
+        # log.info("Executing timed right turn.")
+        package = self.generate_action_package("right")
+        package["turn_timed"] = True
+        package["turn_turnTime"] = time
+        self.message = json.dumps(package)
+        time.sleep(1)
+
     def turn_left(self, deg):
         # log.info("Turning left.")
         package = self.generate_action_package("left")
         package["angle"] = deg
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def turn_left_timed(self, time):
+        # log.info("Executing timed left turn.")
+        package = self.generate_action_package("left")
+        package["turn_timed"] = True
+        package["turn_turnTime"] = time
         self.message = json.dumps(package)
         time.sleep(1)
 
