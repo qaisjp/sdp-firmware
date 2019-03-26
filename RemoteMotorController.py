@@ -93,3 +93,9 @@ class RemoteMotorController:
         package = self.generate_action_package("stop")
         self.message = json.dumps(package)
         time.sleep(1)
+
+    def random(self):
+        # log.info("Triggering random walk.")
+        package = self.generate_action_package("random")
+        self.message = json.dumps(package)
+        time.sleep(1)
