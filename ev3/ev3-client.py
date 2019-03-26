@@ -19,6 +19,7 @@ class EV3_Client:
         self.back_sensor_data = None
         self.stop_now = False
         self.random_thread = None
+        self.timed_turn_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
     def connect(self, sender=False):
@@ -69,9 +70,34 @@ class EV3_Client:
         package = json.loads(msg)
         action = package["action"]
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
-        if action == "left":
+        
+        # Housekeeping: check any of the threads has finished running - clear them if required
+        if not self.random_thread.is_alive():
+            self.random_thread = None
+        if not self.timed_turn_thread.is_alive():
+            self.timed_turn_thread = None
+        
+        # Perform stop regardless thread running state
+        if action == "stop":
+            log.info("Stopping.")
+            self.stop_now = True
+            self.firmware.stop()
+
+        # If a random thread / timed turn thread is already running, ignore this message
+        elif self.timed_turn_thread is not None or self.random_thread is not None:
+            log.info("A turning thread is already in progress, skipping this message.")
+            pass
+        
+        elif action == "left":
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
+                self.firmware.left_side_turn(run_forever=True, running_speed=75) # Turn forever
+                # Use a thread to moniter stop signals
+                tt_loop = asyncio.new_event_loop()
+                tt_thread = threading.Thread(target=self.random_turn_event, args=(tt_loop,))
+                self.random_thread = tt_thread
+                tt_thread.setDaemon(True)
+                tt_thread.start()
             else:
                 angle = int(package["angle"])
                 log.info("Turning left by {}.".format(angle))
@@ -82,14 +108,24 @@ class EV3_Client:
                 else:
                     self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "right":
-            angle = int(package["angle"])
-            log.info("Turning right by {}.".format(angle))
-            if angle < 0:
-                self.firmware.right_side_turn(running_speed=75, twin_turn=True)
-            elif angle == 0:
-                pass
+            if package["turn_timed"]:
+                time = int(package["turn_turnTime"])
+                self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
+                # Use a thread to moniter stop signals
+                tt_loop = asyncio.new_event_loop()
+                tt_thread = threading.Thread(target=self.random_turn_event, args=(tt_loop,))
+                self.random_thread = tt_thread
+                tt_thread.setDaemon(True)
+                tt_thread.start()
             else:
-                self.firmware.right_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                angle = int(package["angle"])
+                log.info("Turning right by {}.".format(angle))
+                if angle < 0:
+                    self.firmware.right_side_turn(running_speed=75, twin_turn=True)
+                elif angle == 0:
+                    pass
+                else:
+                    self.firmware.right_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
         elif action == "forward":
             log.info("Going forward.")
             self.firmware.drive_forward(running_speed=100)
@@ -97,12 +133,11 @@ class EV3_Client:
             log.info("Going backward.")
             self.firmware.drive_backward(running_speed=100)
         elif action == "random":
+            # If a timed turn is already underway, don't do anything
+            if self.timed_turn_thread is not None:
+                pass
             log.info("Performing random movements.")
             self.random_turn()
-        elif action == "stop":
-            log.info("Stopping.")
-            self.stop_now = True
-            self.firmware.stop()
         else:
             log.info("Invalid command.")
             self.firmware.stop()
@@ -153,7 +188,7 @@ class EV3_Client:
         SigFinish.interrupt_thread(self.random_thread)
         # Wait for the thread to finish
         while self.random_thread.is_alive():
-            log.info("Waiting for thread to finish...")
+            pass
         self.random_forward() # Continue to random turning
         
 
@@ -177,9 +212,10 @@ class EV3_Client:
         SigFinish.interrupt_thread(self.random_thread)
         # Wait for the thread to finish
         while self.random_thread.is_alive():
-            log.info("Waiting for thread to finish...")
+            pass
         self.random_turn() # Continue to random turning
 
+    @asyncio.coroutine
     def timed_turn(self, loop, turn_time):
         timer = time.time()
         # While timer is not up, loop and listen for stop signals
@@ -190,11 +226,10 @@ class EV3_Client:
                 self.stop_now = True
                 SigFinish.interrupt_thread(self.random_thread)
                 self.random_thread.join()
-        log.info("Finished turning,.")
-        self.stop_now = True
-        self.firmware.stop()
-        # And?
         
+        # Timer expired
+        log.info("Finished turning, stopping.")
+        self.firmware.stop()        
         
 def socket_sender_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
