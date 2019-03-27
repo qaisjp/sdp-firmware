@@ -203,7 +203,7 @@ class EV3_Client:
         log.info("Random forward drive, time={}".format(move_time))
         
         # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
-        while time.time() - loop_start_time < move_time and self.firmware.front_sensor.value < self.firmware.sensor_threshold:
+        while time.time() - loop_start_time < move_time and self.firmware.front_sensor.value() < self.firmware.sensor_threshold:
             if self.stop_now:
                 # Stop the random walk now
                 print("Stoping random walk")
