@@ -187,7 +187,12 @@ class EV3_Client:
                 
                 # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
                 while time.time() - loop_start_time < move_time:
-                    if self.stop_now or self.firmware.front_sensor.value() < self.firmware.sensor_threshold:
+                    front_sensor_read = 10000
+                    try:
+                        front_sensor_read = self.firmware.front_sensor.value()
+                    except ValueError:
+                        pass
+                    if self.stop_now or front_sensor_read < self.firmware.sensor_threshold:
                         # Stop the random walk now
                         print("Stoping random walk")
                         self.firmware.stop() # Stop all motors
