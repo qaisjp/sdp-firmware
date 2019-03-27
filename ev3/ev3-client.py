@@ -112,10 +112,9 @@ class EV3_Client:
                 self.firmware.left_side_turn(run_forever=True, running_speed=75) # Turn forever
                 # Use a thread to moniter stop signals
                 tt_loop = asyncio.new_event_loop()
-                tt_thread = threading.Thread(target=self.random_turn_event, args=(tt_loop,))
-                self.random_thread = tt_thread
-                tt_thread.setDaemon(True)
-                tt_thread.start()
+                self.timed_turn_thread = threading.Thread(target=self.random_turn_event, args=(tt_loop,))
+                self.timed_turn_thread.setDaemon(True)
+                self.timed_turn_thread.start()
             else:
                 angle = int(package["angle"])
                 log.info("Turning left by {}.".format(angle))
@@ -131,10 +130,9 @@ class EV3_Client:
                 self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
                 # Use a thread to moniter stop signals
                 tt_loop = asyncio.new_event_loop()
-                tt_thread = threading.Thread(target=self.random_turn_event, args=(tt_loop,))
-                self.random_thread = tt_thread
-                tt_thread.setDaemon(True)
-                tt_thread.start()
+                self.timed_turn_thread = threading.Thread(target=self.random_turn_event, args=(tt_loop,))
+                self.timed_turn_thread.setDaemon(True)
+                self.timed_turn_thread.start()
             else:
                 angle = int(package["angle"])
                 log.info("Turning right by {}.".format(angle))
@@ -170,10 +168,9 @@ class EV3_Client:
 
         # Put this into a background thread, wait for external call to stop the movement
         rm_loop = asyncio.new_event_loop()
-        rm_thread = threading.Thread(target=self.random_turn_event, args=(rm_loop,))
-        self.random_thread = rm_thread
-        rm_thread.setDaemon(True)
-        rm_thread.start()
+        self.random_thread = threading.Thread(target=self.random_turn_event, args=(rm_loop,))
+        self.random_thread.setDaemon(True)
+        self.random_thread.start()
 
     def random_forward(self):
         # Driving forward forever
@@ -181,10 +178,9 @@ class EV3_Client:
 
         # Put this into a background thread, wait for external call to stop the movement
         rm_loop = asyncio.new_event_loop()
-        rm_thread = threading.Thread(target=self.random_forward_event, args=(rm_loop,))
-        self.random_thread = rm_thread
-        rm_thread.setDaemon(True)
-        rm_thread.start()
+        self.random_thread = threading.Thread(target=self.random_forward_event, args=(rm_loop,))
+        self.random_thread.setDaemon(True)
+        self.random_thread.start()
     
     @asyncio.coroutine
     def random_turn_event(self, loop):
