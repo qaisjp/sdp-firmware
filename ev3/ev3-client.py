@@ -216,7 +216,7 @@ class EV3_Client:
                             back_sensor_read = self.firmware.back_sensor.value()
                         except ValueError:
                             pass
-                        if self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
+                        if front_sensor_read < self.firmware.sensor_threshold * 10 and back_sensor_read < self.firmware.sensor_threshold * 10:
                             # Robot stuck, stop and send distress signal
                             self.firmware.stop()
                             self.distress_called = time.time()
@@ -280,7 +280,7 @@ class EV3_Client:
                             back_sensor_read = self.firmware.back_sensor.value()
                         except ValueError:
                             pass
-                        if self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
+                        if front_sensor_read < self.firmware.sensor_threshold * 10 and back_sensor_read < self.firmware.sensor_threshold * 10:
                             # Robot stuck, stop and send distress signal
                             self.firmware.stop()
                             self.distress_called = time.time()
