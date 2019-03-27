@@ -9,7 +9,6 @@ grpcio-tools = "*"
 flake8 = "*"
 
 [packages]
-grpcio = "*"
 python-dateutil = "*"
 
 [requires]
