@@ -36,7 +36,16 @@ class EV3_Client:
 
     @asyncio.coroutine
     def setup_receiver(self, port_nr=8866):
-        self.ws_receiver = yield from websockets.connect("ws://{}:{}/".format(self.host, port_nr), ping_interval=None)
+        while True:
+            try:
+                self.ws_receiver = yield from websockets.connect("ws://{}:{}/".format(self.host, port_nr), ping_interval=None)
+                break
+            except ConnectionRefusedError:
+                # Connection refused, repeat trying in a few seconds
+                log.warn("Connection to port {} refused, trying again in 5 seconds.".format(port_nr))
+                yield from asyncio.sleep(5)
+                continue
+
         log.info("Web socket connection established on {}:{}".format(self.ws_receiver.host, self.ws_receiver.port))
         try:
             while True:
@@ -48,7 +57,16 @@ class EV3_Client:
 
     @asyncio.coroutine
     def setup_sender(self, port_nr=19221):
-        self.ws_sender = yield from websockets.connect("ws://{}:{}/".format(self.host, port_nr), ping_interval=None)
+        while True:
+            try:
+                self.ws_sender = yield from websockets.connect("ws://{}:{}/".format(self.host, port_nr), ping_interval=None)
+                break
+            except ConnectionRefusedError:
+                # Connection refused, repeat trying in a few seconds
+                log.warn("Connection to port {} refused, trying again in 5 seconds.".format(port_nr))
+                yield from asyncio.sleep(5)
+                continue
+
         log.info("Web socket connection established on {}:{}".format(self.ws_sender.host, self.ws_sender.port))
         try:
             while True:
