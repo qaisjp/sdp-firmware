@@ -192,7 +192,10 @@ class EV3_Client:
                         front_sensor_read = self.firmware.front_sensor.value()
                     except ValueError:
                         pass
-                    if self.stop_now or front_sensor_read < self.firmware.sensor_threshold * 10:
+                    if front_sensor_read < self.firmware.sensor_threshold * 10:
+                        # If sensor value is too low, leave this while loop
+                        break
+                    if self.stop_now:
                         # Stop the random walk now
                         print("Stoping random walk")
                         self.firmware.stop() # Stop all motors
