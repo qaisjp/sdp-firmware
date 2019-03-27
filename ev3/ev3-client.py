@@ -71,8 +71,10 @@ class EV3_Client:
         try:
             while True:
                 package = {
+                    "message": "sensor",
                     "front_sensor": str(self.firmware.front_sensor.value()),
-                    "back_sensor": str(self.firmware.back_sensor.value())
+                    "back_sensor": str(self.firmware.back_sensor.value()),
+                    "severity": 0
                 }
                 log.info("[EV3 > Pi] Sending sensor data (\"front_sensor\": {}, \"back_sensor\": {})"
                     .format(package["front_sensor"], package["back_sensor"]))
@@ -201,7 +203,17 @@ class EV3_Client:
                 if not stop_called:
                     currently_turning = False
                 else:
-                    break
+                    while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
+                        # Robot stuck, stop and send distress signal
+                        package = {
+                            "message": "distress",
+                            "reason": "sensor_stuck",
+                            "severity": 3
+                        }
+                        self.firmware.stop()
+                        yield from self.ws_sender.send(json.dumps(package))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
+                        yield from asyncio.sleep(5)
             else:
                 # Driving forward forever
                 self.firmware.drive_forward(run_forever=True, running_speed=100)
@@ -253,7 +265,19 @@ class EV3_Client:
                 if not stop_called:
                     currently_turning = True
                 else:
-                    break
+                    while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
+                        # Robot stuck, stop and send distress signal
+                        package = {
+                            "message": "distress",
+                            "reason": "sensor_stuck",
+                            "severity": 3
+                        }
+                        self.firmware.stop()
+                        yield from self.ws_sender.send(json.dumps(package))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
+                        yield from asyncio.sleep(5)
+
+                                                
 
     @asyncio.coroutine
     def timed_turn(self, loop, turn_time):
