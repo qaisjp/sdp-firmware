@@ -86,7 +86,7 @@ class EV3_Client:
                             "reason": "sensor_stuck",
                             "severity": 3
                         }
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(package["reason"]))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(distress_package["reason"]))
                         yield from self.ws_sender.send(json.dumps(distress_package))
                         self.last_distress_sent = time.time()
                         self.distress_called = None
@@ -210,10 +210,18 @@ class EV3_Client:
 
                 log.info("Switching to random forward driving.")
                 if not stop_called:
-                    while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
-                        # Robot stuck, stop and send distress signal
-                        self.firmware.stop()
-                        self.distress_called = time.time()
+                    while True:
+                        try:
+                            front_sensor_read = self.firmware.front_sensor.value()
+                            back_sensor_read = self.firmware.back_sensor.value()
+                        except ValueError:
+                            pass
+                        if self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
+                            # Robot stuck, stop and send distress signal
+                            self.firmware.stop()
+                            self.distress_called = time.time()
+                        else:
+                            break
                     currently_turning = False
                 else:
                     break
@@ -266,10 +274,18 @@ class EV3_Client:
 
                 log.info("Switching to random turning.")
                 if not stop_called:
-                    while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
-                        # Robot stuck, stop and send distress signal
-                        self.firmware.stop()
-                        self.distress_called = time.time()
+                    while True:
+                        try:
+                            front_sensor_read = self.firmware.front_sensor.value()
+                            back_sensor_read = self.firmware.back_sensor.value()
+                        except ValueError:
+                            pass
+                        if self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
+                            # Robot stuck, stop and send distress signal
+                            self.firmware.stop()
+                            self.distress_called = time.time()
+                        else:
+                            break
                     currently_turning = True
                 else:
                     break
