@@ -72,9 +72,9 @@ class EV3_Client:
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
         
         # Housekeeping: check any of the threads has finished running - clear them if required
-        if not self.random_thread.is_alive():
+        if not self.random_thread is None and not self.random_thread.is_alive():
             self.random_thread = None
-        if not self.timed_turn_thread.is_alive():
+        if not self.random_thread is None and not self.timed_turn_thread.is_alive():
             self.timed_turn_thread = None
         
         # Perform stop regardless thread running state
