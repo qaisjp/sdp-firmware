@@ -90,10 +90,10 @@ class EV3_Client:
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
         
         # Housekeeping: check any of the threads has finished running - clear them if required
-        if not self.random_thread is None and not self.random_thread.is_alive():
-            self.random_thread = None
-        if not self.random_thread is None and not self.timed_turn_thread.is_alive():
-            self.timed_turn_thread = None
+        # if not self.random_thread is None and not self.random_thread.is_alive():
+        #     self.random_thread = None
+        # if not self.random_thread is None and not self.timed_turn_thread.is_alive():
+        #     self.timed_turn_thread = None
         
         # Perform stop regardless thread running state
         if action == "stop":
@@ -102,9 +102,9 @@ class EV3_Client:
             self.firmware.stop()
 
         # If a random thread / timed turn thread is already running, ignore this message
-        elif self.timed_turn_thread is not None or self.random_thread is not None:
-            log.info("A turning thread is already in progress, skipping this message.")
-            pass
+        # elif self.timed_turn_thread is not None or self.random_thread is not None:
+        #     log.info("A turning thread is already in progress, skipping this message.")
+        #     pass
         
         elif action == "left":
             if package["turn_timed"]:
@@ -150,8 +150,8 @@ class EV3_Client:
             self.firmware.drive_backward(running_speed=100)
         elif action == "random":
             # If a timed turn is already underway, don't do anything
-            if self.timed_turn_thread is not None:
-                pass
+            # if self.timed_turn_thread is not None:
+            #     pass
             log.info("Performing random movements.")
             self.random_turn()
         else:
@@ -182,11 +182,11 @@ class EV3_Client:
                 print("Stopping random turning")
                 self.firmware.stop() # Stop all motors
                 self.stop_now = False
-                SigFinish.interrupt_thread(self.random_thread)
-                self.random_thread.join()
+                # SigFinish.interrupt_thread(self.random_thread)
+                # self.random_thread.join()
 
         log.info("Switching to random forward driving.")
-        if time.time() - loop_start_time < turn_time:
+        if time.time() - loop_start_time >= turn_time:
             self.random_forward() # Continue to random forward drive
 
     def random_forward(self):
@@ -209,11 +209,11 @@ class EV3_Client:
                 print("Stoping random walk")
                 self.firmware.stop() # Stop all motors
                 self.stop_now = False
-                SigFinish.interrupt_thread(self.random_thread)
-                self.random_thread.join()
+                # SigFinish.interrupt_thread(self.random_thread)
+                # self.random_thread.join()
 
         log.info("Switching to random turning.")
-        if time.time() - loop_start_time < move_time:
+        if time.time() - loop_start_time >= move_time:
             self.random_turn() # Continue to random turning
     
     # @asyncio.coroutine
