@@ -15,10 +15,10 @@ class EV3_Client:
         self.est = False
         self.ws_receiver = None
         self.ws_sender = None
-        self.front_sensor_data = None
-        self.back_sensor_data = None
         self.stop_now = False
         self.random_thread = None
+        self.distress_called = None
+        self.last_distress_sent = time.time()
         self.timed_turn_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
@@ -79,8 +79,17 @@ class EV3_Client:
                 log.info("[EV3 > Pi] Sending sensor data (\"front_sensor\": {}, \"back_sensor\": {})"
                     .format(package["front_sensor"], package["back_sensor"]))
                 yield from self.ws_sender.send(json.dumps(package))
-                self.front_sensor_data = None
-                self.back_sensor_data = None
+                if self.distress_called is not None:
+                    if self.distress_called - self.last_distress_sent > 5:
+                        distress_package = {
+                            "message": "distress",
+                            "reason": "sensor_stuck",
+                            "severity": 3
+                        }
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(package["reason"]))
+                        yield from self.ws_sender.send(json.dumps(distress_package))
+                        self.last_distress_sent = time.time()
+                        self.distress_called = None
                 time.sleep(5)
         finally:
             self.firmware.stop()
@@ -203,15 +212,8 @@ class EV3_Client:
                 if not stop_called:
                     while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
                         # Robot stuck, stop and send distress signal
-                        package = {
-                            "message": "distress",
-                            "reason": "sensor_stuck",
-                            "severity": 3
-                        }
                         self.firmware.stop()
-                        # yield from self.ws_sender.send(json.dumps(package))
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(package["reason"]))
-                        # yield from asyncio.sleep(5)
+                        self.distress_called = time.time()
                     currently_turning = False
                 else:
                     break
@@ -266,15 +268,8 @@ class EV3_Client:
                 if not stop_called:
                     while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
                         # Robot stuck, stop and send distress signal
-                        package = {
-                            "message": "distress",
-                            "reason": "sensor_stuck",
-                            "severity": 3
-                        }
                         self.firmware.stop()
-                        # yield from self.ws_sender.send(json.dumps(package))
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(package["reason"]))
-                        # yield from asyncio.sleep(5)
+                        self.distress_called = time.time()
                     currently_turning = True
                 else:
                     break
