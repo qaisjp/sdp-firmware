@@ -89,23 +89,11 @@ class EV3_Client:
         action = package["action"]
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
         
-        # Housekeeping: check any of the threads has finished running - clear them if required
-        # if not self.random_thread is None and not self.random_thread.is_alive():
-        #     self.random_thread = None
-        # if not self.random_thread is None and not self.timed_turn_thread.is_alive():
-        #     self.timed_turn_thread = None
-        
-        # Perform stop regardless thread running state
         if action == "stop":
             log.info("Stopping.")
             self.stop_now = True
             self.firmware.stop()
 
-        # If a random thread / timed turn thread is already running, ignore this message
-        # elif self.timed_turn_thread is not None or self.random_thread is not None:
-        #     log.info("A turning thread is already in progress, skipping this message.")
-        #     pass
-        
         elif action == "left":
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
@@ -166,12 +154,6 @@ class EV3_Client:
         else:
             self.firmware.left_side_turn(run_forever=True, running_speed=75)
 
-        # Put this into a background thread, wait for external call to stop the movement
-        # rm_loop = asyncio.new_event_loop()
-        # self.random_thread = threading.Thread(target=self.random_turn_event, args=(rm_loop,))
-        # self.random_thread.setDaemon(True)
-        # self.random_thread.start()
-
         loop_start_time = time.time()
         turn_time = random.randint(1, 10) # Length of turn, in seconds
         log.info("Random turn, time={}".format(turn_time))
@@ -184,8 +166,6 @@ class EV3_Client:
                 self.firmware.stop() # Stop all motors
                 self.stop_now = False
                 stop_called = True
-                # SigFinish.interrupt_thread(self.random_thread)
-                # self.random_thread.join()
 
         log.info("Switching to random forward driving.")
         if not stop_called:
@@ -195,11 +175,6 @@ class EV3_Client:
         # Driving forward forever
         self.firmware.drive_forward(run_forever=True, running_speed=100)
 
-        # Put this into a background thread, wait for external call to stop the movement
-        # rm_loop = asyncio.new_event_loop()
-        # self.random_thread = threading.Thread(target=self.random_forward_event, args=(rm_loop,))
-        # self.random_thread.setDaemon(True)
-        # self.random_thread.start()
         loop_start_time = time.time()
         move_time = random.randint(1, 20) # Length of forward drive, in seconds
         log.info("Random forward drive, time={}".format(move_time))
@@ -207,68 +182,17 @@ class EV3_Client:
         stop_called = False
         
         # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
-        while time.time() - loop_start_time < move_time and self.firmware.front_sensor.value() < self.firmware.sensor_threshold:
-            if self.stop_now:
+        while time.time() - loop_start_time < move_time:
+            if self.stop_now or self.firmware.front_sensor.value() < self.firmware.sensor_threshold:
                 # Stop the random walk now
                 print("Stoping random walk")
                 self.firmware.stop() # Stop all motors
                 self.stop_now = False
                 stop_called = True
-                # SigFinish.interrupt_thread(self.random_thread)
-                # self.random_thread.join()
 
         log.info("Switching to random turning.")
         if not stop_called:
             self.random_turn() # Continue to random turning
-    
-    # @asyncio.coroutine
-    # def random_turn_event(self, loop):
-    #     # Check sensor values here?
-    #     loop_start_time = time.time()
-    #     turn_time = random.randint(1, 10) # Length of turn, in seconds
-    #     log.info("Random turn, time={}".format(turn_time))
-        
-    #     # Loop here, until either stop_now is triggered or requested time has elapsed
-    #     while time.time() - loop_start_time < turn_time:
-    #         if self.stop_now:
-    #             print("Stopping random turning")
-    #             self.firmware.stop() # Stop all motors
-    #             self.stop_now = False
-    #             SigFinish.interrupt_thread(self.random_thread)
-    #             self.random_thread.join()
-
-    #     # Stop turning, go to forward movement
-    #     log.info("Switching to random forward movement.")
-    #     SigFinish.interrupt_thread(self.random_thread)
-    #     # Wait for the thread to finish
-    #     while self.random_thread.is_alive():
-    #         pass
-    #     self.random_forward() # Continue to random turning
-        
-
-    # @asyncio.coroutine
-    # def random_forward_event(self, loop):
-    #     loop_start_time = time.time()
-    #     move_time = random.randint(1, 20) # Length of forward drive, in seconds
-    #     log.info("Random forward drive, time={}".format(move_time))
-        
-    #     # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
-    #     while time.time() - loop_start_time < move_time and self.firmware.front_sensor.value < self.firmware.sensor_threshold:
-    #         if self.stop_now:
-    #             # Stop the random walk now
-    #             print("Stoping random walk")
-    #             self.firmware.stop() # Stop all motors
-    #             self.stop_now = False
-    #             SigFinish.interrupt_thread(self.random_thread)
-    #             self.random_thread.join()
-
-    #     # Stop driving forward, go to turning
-    #     log.info("Switching to random turning.")
-    #     SigFinish.interrupt_thread(self.random_thread)
-    #     # Wait for the thread to finish
-    #     while self.random_thread.is_alive():
-    #         pass
-    #     self.random_turn() # Continue to random turning
 
     @asyncio.coroutine
     def timed_turn(self, loop, turn_time):
