@@ -60,6 +60,7 @@ class RemoteMotorController:
         # log.info("Turning right.")
         package = self.generate_action_package("right")
         package["angle"] = deg
+        package["turn_timed"] = False
         self.message = json.dumps(package)
         time.sleep(1)
 
@@ -75,6 +76,7 @@ class RemoteMotorController:
         # log.info("Turning left.")
         package = self.generate_action_package("left")
         package["angle"] = deg
+        package["turn_timed"] = False
         self.message = json.dumps(package)
         time.sleep(1)
 
