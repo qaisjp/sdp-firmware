@@ -201,8 +201,6 @@ class EV3_Client:
 
                 log.info("Switching to random forward driving.")
                 if not stop_called:
-                    currently_turning = False
-                else:
                     while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
                         # Robot stuck, stop and send distress signal
                         package = {
@@ -211,9 +209,11 @@ class EV3_Client:
                             "severity": 3
                         }
                         self.firmware.stop()
-                        yield from self.ws_sender.send(json.dumps(package))
+                        # yield from self.ws_sender.send(json.dumps(package))
                         log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
-                        yield from asyncio.sleep(5)
+                        # yield from asyncio.sleep(5)
+                    currently_turning = False
+                else:
                     break
             else:
                 # Driving forward forever
@@ -264,8 +264,6 @@ class EV3_Client:
 
                 log.info("Switching to random turning.")
                 if not stop_called:
-                    currently_turning = True
-                else:
                     while self.firmware.front_sensor.value() < self.firmware.sensor_threshold * 10 and self.firmware.back_sensor.value() < self.firmware.sensor_threshold * 10:
                         # Robot stuck, stop and send distress signal
                         package = {
@@ -274,9 +272,11 @@ class EV3_Client:
                             "severity": 3
                         }
                         self.firmware.stop()
-                        yield from self.ws_sender.send(json.dumps(package))
+                        # yield from self.ws_sender.send(json.dumps(package))
                         log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
-                        yield from asyncio.sleep(5)
+                        # yield from asyncio.sleep(5)
+                    currently_turning = True
+                else:
                     break
 
                                                 
