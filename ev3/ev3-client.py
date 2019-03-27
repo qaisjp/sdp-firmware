@@ -214,6 +214,7 @@ class EV3_Client:
                         yield from self.ws_sender.send(json.dumps(package))
                         log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
                         yield from asyncio.sleep(5)
+                    break
             else:
                 # Driving forward forever
                 self.firmware.drive_forward(run_forever=True, running_speed=100)
@@ -276,6 +277,7 @@ class EV3_Client:
                         yield from self.ws_sender.send(json.dumps(package))
                         log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
                         yield from asyncio.sleep(5)
+                    break
 
                                                 
 
