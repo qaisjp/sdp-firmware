@@ -210,7 +210,7 @@ class EV3_Client:
                         }
                         self.firmware.stop()
                         # yield from self.ws_sender.send(json.dumps(package))
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(package["reason"]))
                         # yield from asyncio.sleep(5)
                     currently_turning = False
                 else:
@@ -273,7 +273,7 @@ class EV3_Client:
                         }
                         self.firmware.stop()
                         # yield from self.ws_sender.send(json.dumps(package))
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}}".format(package["reason"]))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(package["reason"]))
                         # yield from asyncio.sleep(5)
                     currently_turning = True
                 else:
