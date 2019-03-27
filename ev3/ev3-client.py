@@ -191,6 +191,7 @@ class EV3_Client:
         # Check sensor values here?
         loop_start_time = time.time()
         turn_time = random.randint(1, 10) # Length of turn, in seconds
+        log.info("Random turn, time={}".format(turn_time))
         
         # Loop here, until either stop_now is triggered or requested time has elapsed
         while time.time() - loop_start_time < turn_time:
@@ -213,10 +214,11 @@ class EV3_Client:
     @asyncio.coroutine
     def random_forward_event(self, loop):
         loop_start_time = time.time()
-        turn_time = random.randint(1, 20) # Length of forward drive, in seconds
+        move_time = random.randint(1, 20) # Length of forward drive, in seconds
+        log.info("Random forward drive, time={}".format(move_time))
         
         # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
-        while time.time() - loop_start_time < turn_time and self.firmware.front_sensor.value < self.firmware.sensor_threshold:
+        while time.time() - loop_start_time < move_time and self.firmware.front_sensor.value < self.firmware.sensor_threshold:
             if self.stop_now:
                 # Stop the random walk now
                 print("Stoping random walk")
