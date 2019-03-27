@@ -193,7 +193,21 @@ class EV3_Client:
                     except ValueError:
                         pass
                     if front_sensor_read < self.firmware.sensor_threshold * 10:
-                        # If sensor value is too low, leave this while loop
+                        # If sensor value is too low, back up, then leave this loop
+                        self.firmware.drive_backward()
+                        backup_start = time.time()
+                        backup_time = 5 # Total time to back up if obstacle encountered, in seconds
+                        while time.time() - backup_start < backup_time:
+                            # If obstacle encountered at the back, stop now and continue to turn
+                            back_sensor_read = 10000
+                            try:
+                                back_sensor_read = self.firmware.back_sensor.value()
+                            except ValueError:
+                                pass
+                            if back_sensor_read < self.firmware.sensor_threshold * 10:
+                                self.firmware.stop()
+                                break
+
                         break
                     if self.stop_now:
                         # Stop the random walk now
