@@ -196,6 +196,7 @@ class EV3_Client:
                         # Stop the random walk now
                         print("Stoping random walk")
                         self.firmware.stop() # Stop all motors
+                        # TODO: what happens next?
                         self.stop_now = False
                         stop_called = True
 
