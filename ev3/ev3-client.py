@@ -141,58 +141,64 @@ class EV3_Client:
             # if self.timed_turn_thread is not None:
             #     pass
             log.info("Performing random movements.")
-            self.random_turn()
+            self.random_movement()
         else:
             log.info("Invalid command.")
             self.firmware.stop()
 
-    def random_turn(self):
-        turn_left = random.random() # Decide a direction to turn
-        # Turning forever
-        if turn_left < 0.5:
-            self.firmware.right_side_turn(run_forever=True, running_speed=75)
-        else:
-            self.firmware.left_side_turn(run_forever=True, running_speed=75)
+    def random_movement(self):
+        currently_turning = True
+        while True:
+            if currently_turning:
+                turn_left = random.random() # Decide a direction to turn
+                # Turning forever
+                if turn_left < 0.5:
+                    self.firmware.right_side_turn(run_forever=True, running_speed=75)
+                else:
+                    self.firmware.left_side_turn(run_forever=True, running_speed=75)
 
-        loop_start_time = time.time()
-        turn_time = random.randint(1, 10) # Length of turn, in seconds
-        log.info("Random turn, time={}".format(turn_time))
-        
-        stop_called = False
-        # Loop here, until either stop_now is triggered or requested time has elapsed
-        while time.time() - loop_start_time < turn_time:
-            if self.stop_now:
-                print("Stopping random turning")
-                self.firmware.stop() # Stop all motors
-                self.stop_now = False
-                stop_called = True
+                loop_start_time = time.time()
+                turn_time = random.randint(1, 10) # Length of turn, in seconds
+                log.info("Random turn, time={}".format(turn_time))
+                
+                stop_called = False
+                # Loop here, until either stop_now is triggered or requested time has elapsed
+                while time.time() - loop_start_time < turn_time:
+                    if self.stop_now:
+                        print("Stopping random turning")
+                        self.firmware.stop() # Stop all motors
+                        self.stop_now = False
+                        stop_called = True
 
-        log.info("Switching to random forward driving.")
-        if not stop_called:
-            self.random_forward() # Continue to random forward drive
+                log.info("Switching to random forward driving.")
+                if not stop_called:
+                    currently_turning = False
+                else:
+                    break
+            else:
+                # Driving forward forever
+                self.firmware.drive_forward(run_forever=True, running_speed=100)
 
-    def random_forward(self):
-        # Driving forward forever
-        self.firmware.drive_forward(run_forever=True, running_speed=100)
+                loop_start_time = time.time()
+                move_time = random.randint(1, 20) # Length of forward drive, in seconds
+                log.info("Random forward drive, time={}".format(move_time))
 
-        loop_start_time = time.time()
-        move_time = random.randint(1, 20) # Length of forward drive, in seconds
-        log.info("Random forward drive, time={}".format(move_time))
+                stop_called = False
+                
+                # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
+                while time.time() - loop_start_time < move_time:
+                    if self.stop_now or self.firmware.front_sensor.value() < self.firmware.sensor_threshold:
+                        # Stop the random walk now
+                        print("Stoping random walk")
+                        self.firmware.stop() # Stop all motors
+                        self.stop_now = False
+                        stop_called = True
 
-        stop_called = False
-        
-        # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
-        while time.time() - loop_start_time < move_time:
-            if self.stop_now or self.firmware.front_sensor.value() < self.firmware.sensor_threshold:
-                # Stop the random walk now
-                print("Stoping random walk")
-                self.firmware.stop() # Stop all motors
-                self.stop_now = False
-                stop_called = True
-
-        log.info("Switching to random turning.")
-        if not stop_called:
-            self.random_turn() # Continue to random turning
+                log.info("Switching to random turning.")
+                if not stop_called:
+                    currently_turning = True
+                else:
+                    break
 
     @asyncio.coroutine
     def timed_turn(self, loop, turn_time):
