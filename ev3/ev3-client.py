@@ -164,6 +164,33 @@ class EV3_Client:
                 stop_called = False
                 # Loop here, until either stop_now is triggered or requested time has elapsed
                 while time.time() - loop_start_time < turn_time:
+                    front_sensor_read = 10000
+                    try:
+                        front_sensor_read = self.firmware.front_sensor.value()
+                    except ValueError:
+                        pass
+                    if front_sensor_read < self.firmware.sensor_threshold * 10:
+                        # If sensor value is too low, back up, then leave this loop
+                        self.firmware.drive_backward(running_speed=75)
+                        backup_start = time.time()
+                        backup_time = 5 # Total time to back up if obstacle encountered, in seconds
+                        while time.time() - backup_start < backup_time:
+                            # If obstacle encountered at the back, stop now and continue to go forward
+                            back_sensor_read = 10000
+                            try:
+                                back_sensor_read = self.firmware.back_sensor.value()
+                            except ValueError:
+                                pass
+                            if self.stop_now:
+                                # Also listen for stop_now flag
+                                self.firmware.stop()
+                                self.stop_now = False
+                                stop_called = True
+                            if back_sensor_read < self.firmware.sensor_threshold * 10:
+                                self.firmware.stop()
+                                break
+
+                        break
                     if self.stop_now:
                         print("Stopping random turning")
                         self.firmware.stop() # Stop all motors
@@ -194,7 +221,7 @@ class EV3_Client:
                         pass
                     if front_sensor_read < self.firmware.sensor_threshold * 10:
                         # If sensor value is too low, back up, then leave this loop
-                        self.firmware.drive_backward()
+                        self.firmware.drive_backward(running_speed=75)
                         backup_start = time.time()
                         backup_time = 5 # Total time to back up if obstacle encountered, in seconds
                         while time.time() - backup_start < backup_time:
@@ -204,6 +231,11 @@ class EV3_Client:
                                 back_sensor_read = self.firmware.back_sensor.value()
                             except ValueError:
                                 pass
+                            if self.stop_now:
+                                # Also listen for stop_now flag
+                                self.firmware.stop()
+                                self.stop_now = False
+                                stop_called = True
                             if back_sensor_read < self.firmware.sensor_threshold * 10:
                                 self.firmware.stop()
                                 break
