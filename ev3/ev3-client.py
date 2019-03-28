@@ -96,7 +96,6 @@ class EV3_Client:
             self.firmware.stop()
             self.ws_sender.close()
 
-    @asyncio.coroutine
     def message_process(self, msg):
         package = json.loads(msg)
         action = package["action"]
