@@ -335,7 +335,7 @@ def socket_error_message_loop(msg):
     try:
         error_package = {
                             "message": "error",
-                            "reason": "msg",
+                            "reason": msg,
                             "severity": 3
                         }
         yield from ws.send(json.dumps(error_package))
@@ -364,7 +364,7 @@ def main():
             ev3.firmware.stop()
     except IOError as e:
         log.error("\033[1;37;41m[EV3] Error encountered, attempting to send message to Pi...\033[0m")
-        log.debug("[EV3] Error details: {}".format(str(e)))
+        log.info("[EV3] Error details: {}".format(str(e)))
         asyncio.get_event_loop().run_until_complete(socket_error_message_loop(str(e)))
 
 
