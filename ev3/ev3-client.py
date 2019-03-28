@@ -152,12 +152,16 @@ class EV3_Client:
             # if self.timed_turn_thread is not None:
             #     pass
             log.info("Performing random movements.")
-            self.random_movement()
+            random_loop = asyncio.new_event_loop()
+            random_thread = threading.Thread(target=self.random_movement, args=(random_loop,))
+            random_thread.setDaemon(True)
+            random_thread.start()
         else:
             log.info("Invalid command.")
             self.firmware.stop()
 
-    def random_movement(self):
+    @asyncio.coroutine
+    def random_movement(self, loop):
         currently_turning = True
         while True:
             if currently_turning:
@@ -216,7 +220,7 @@ class EV3_Client:
                             back_sensor_read = self.firmware.back_sensor.value()
                         except ValueError:
                             pass
-                        if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10 and back_sensor_read < self.firmware.obstacle * 10:
+                        if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10 and back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
                             # Robot stuck, stop and send distress signal
                             self.firmware.stop()
                             self.distress_called = time.time()
