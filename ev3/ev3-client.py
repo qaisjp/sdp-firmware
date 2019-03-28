@@ -319,24 +319,54 @@ def socket_receiver_establish_loop(client, loop):
     client.connect(sender=False)
     loop.run_forever()
 
+@asyncio.coroutine
+def socket_error_message_loop(msg):
+
+    while True:
+        try:
+            ws = yield from websockets.connect("ws://10.42.0.1:19221", ping_interval=None)
+            break
+        except ConnectionRefusedError:
+            # Connection refused, repeat trying in a few seconds
+            log.warn("Connection to port {} refused, trying again in 5 seconds.".format(19221))
+            yield from asyncio.sleep(5)
+            continue
+    
+    try:
+        error_package = {
+                            "message": "error",
+                            "reason": "msg",
+                            "severity": 3
+                        }
+        yield from ws.send(json.dumps(error_package))
+    finally:
+        yield from ws.close()
+        sys.exit(1)
+
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-    ev3 = EV3_Client()
-
     try:
-        ws_receiver = asyncio.new_event_loop()
-        ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
-        ws_receiver_thread.setDaemon(True)
-        ws_receiver_thread.start()
+        ev3 = EV3_Client()
 
-        ws_sender = asyncio.new_event_loop()
-        ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
-        ws_sender_thread.setDaemon(True)
-        ws_sender_thread.start()
+        try:
+            ws_receiver = asyncio.new_event_loop()
+            ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
+            ws_receiver_thread.setDaemon(True)
+            ws_receiver_thread.start()
 
-        asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt:
-        ev3.firmware.stop()
+            ws_sender = asyncio.new_event_loop()
+            ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
+            ws_sender_thread.setDaemon(True)
+            ws_sender_thread.start()
+
+            asyncio.get_event_loop().run_forever()
+        except KeyboardInterrupt:
+            ev3.firmware.stop()
+    except IOError as e:
+        log.error("\033[1;37;41m[EV3] Error encountered, attempting to send message to Pi...\033[0m")
+        log.debug("[EV3] Error details: {}".format(str(e)))
+        asyncio.get_event_loop().run_until_complete(socket_error_message_loop(str(e)))
+
 
 if __name__ == "__main__":
     main()
