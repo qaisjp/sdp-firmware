@@ -51,7 +51,10 @@ class RemoteMotorController:
         if package["message"] == "sensor":
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
         elif package["message"] == "distress":
-            log.info("[Pi < EV3] Distress signal received, reason:{}".format(package["reason"]))
+            log.info("[Pi < EV3] Distress signal received, reason: {}".format(package["reason"]))
+        elif package["message"] == "error":
+            log.error("[Pi < EV3] Error message received, reason: {}".format(package["reason"]))
+            sys.exit(1)
 
     def generate_action_package(self, msg):
         out = {
