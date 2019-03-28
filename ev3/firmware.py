@@ -33,7 +33,7 @@ class GrowBot:
         self.turning_constant = 61 # Constant used for turning around
         self.turning_def_degree = 90 # Default degree used to turn
         self.sensor_plant_threshold = 40 # Distance used by front/back sensor to stop the robot beyond this if a plant is reached, in cm
-        self.sensor_obstacle_threshold = 10 # Distance used by front/back sensor to stop the robot during random movement, in cm
+        self.sensor_obstacle_threshold = 10 # Distance us
 
         ## Defines robot behaviours
         self.enable_obstacle_detection = False
@@ -192,7 +192,7 @@ class GrowBot:
 
     def front_faces_obstacle(self):
         # Returns true if the front sensor returns a value lower than the threshold set
-        return (self.front_sensor.value() < self.sensor_plant_threshold)
+        return (self.front_sensor.value() < self.sensor_obstacle_threshold)
 
     def switch_obstacle_detection(self, value):
         self.enable_obstacle_detection = value

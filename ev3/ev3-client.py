@@ -152,16 +152,12 @@ class EV3_Client:
             # if self.timed_turn_thread is not None:
             #     pass
             log.info("Performing random movements.")
-            random_loop = asyncio.new_event_loop()
-            random_thread = threading.Thread(target=self.random_movement, args=(random_loop,))
-            random_thread.setDaemon(True)
-            random_thread.start()
+            self.random_movement()
         else:
             log.info("Invalid command.")
             self.firmware.stop()
 
-    @asyncio.coroutine
-    def random_movement(self, loop):
+    def random_movement(self):
         currently_turning = True
         while True:
             if currently_turning:
