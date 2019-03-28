@@ -50,7 +50,8 @@ class EV3_Client:
         try:
             while True:
                 msg = yield from self.ws_receiver.recv()
-                self.message_process(msg)
+                process_thread = threading.Thread(target=self.message_process, args=(msg,))
+                process_thread.start()
         finally:
             self.firmware.stop()
             self.ws_receiver.close()
@@ -95,6 +96,7 @@ class EV3_Client:
             self.firmware.stop()
             self.ws_sender.close()
 
+    @asyncio.coroutine
     def message_process(self, msg):
         package = json.loads(msg)
         action = package["action"]
