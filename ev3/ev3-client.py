@@ -72,7 +72,7 @@ class EV3_Client:
         try:
             while True:
                 package = {
-                    "message": "sensor",
+                    "type": "sensor",
                     "front_sensor": str(self.firmware.front_sensor.value()),
                     "back_sensor": str(self.firmware.back_sensor.value()),
                     "severity": 0
@@ -83,11 +83,11 @@ class EV3_Client:
                 if self.distress_called is not None:
                     if self.distress_called - self.last_distress_sent > 5:
                         distress_package = {
-                            "message": "distress",
-                            "reason": "sensor_stuck",
+                            "type": "distress",
+                            "message": "sensor_stuck",
                             "severity": 3
                         }
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(distress_package["reason"]))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(distress_package["message"]))
                         yield from self.ws_sender.send(json.dumps(distress_package))
                         self.last_distress_sent = time.time()
                         self.distress_called = None
@@ -334,8 +334,8 @@ def socket_error_message_loop(msg):
     
     try:
         error_package = {
-                            "message": "error",
-                            "reason": msg,
+                            "type": "error",
+                            "message": msg,
                             "severity": 3
                         }
         yield from ws.send(json.dumps(error_package))

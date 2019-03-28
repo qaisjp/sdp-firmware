@@ -5,6 +5,7 @@ import time
 import websockets
 import asyncio
 import json
+from remote import Remote
 
 
 class RemoteMotorController:
@@ -14,6 +15,7 @@ class RemoteMotorController:
         self.ws_receiver = None
         self.ws_sender = None
         self.message = None
+        self.remote = Remote("solskjaer")
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -48,13 +50,15 @@ class RemoteMotorController:
 
     def process_message(self, msg):
         package = json.loads(msg)
-        if package["message"] == "sensor":
+        severity = 0
+        if package["type"] == "sensor":
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
-        elif package["message"] == "distress":
-            log.info("[Pi < EV3] Distress signal received, reason: {}".format(package["reason"]))
-        elif package["message"] == "error":
-            log.error("[Pi < EV3] Error message received, reason: {}".format(package["reason"]))
+        elif package["type"] == "distress":
+            log.info("[Pi < EV3] Distress signal received, reason: {}".format(package["message"]))
+        elif package["type"] == "error":
+            log.error("[Pi < EV3] Error message received, reason: {}".format(package["message"]))
             sys.exit(1)
+        self.remote.create_log_entry(package["type"], severity=package["severity"])
 
     def generate_action_package(self, msg):
         out = {
