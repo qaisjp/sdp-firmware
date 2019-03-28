@@ -15,10 +15,10 @@ class EV3_Client:
         self.est = False
         self.ws_receiver = None
         self.ws_sender = None
-        self.front_sensor_data = None
-        self.back_sensor_data = None
         self.stop_now = False
         self.random_thread = None
+        self.distress_called = None
+        self.last_distress_sent = time.time()
         self.timed_turn_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
@@ -50,7 +50,8 @@ class EV3_Client:
         try:
             while True:
                 msg = yield from self.ws_receiver.recv()
-                self.message_process(msg)
+                process_thread = threading.Thread(target=self.message_process, args=(msg,))
+                process_thread.start()
         finally:
             self.firmware.stop()
             self.ws_receiver.close()
@@ -71,14 +72,25 @@ class EV3_Client:
         try:
             while True:
                 package = {
+                    "message": "sensor",
                     "front_sensor": str(self.firmware.front_sensor.value()),
-                    "back_sensor": str(self.firmware.back_sensor.value())
+                    "back_sensor": str(self.firmware.back_sensor.value()),
+                    "severity": 0
                 }
                 log.info("[EV3 > Pi] Sending sensor data (\"front_sensor\": {}, \"back_sensor\": {})"
                     .format(package["front_sensor"], package["back_sensor"]))
                 yield from self.ws_sender.send(json.dumps(package))
-                self.front_sensor_data = None
-                self.back_sensor_data = None
+                if self.distress_called is not None:
+                    if self.distress_called - self.last_distress_sent > 5:
+                        distress_package = {
+                            "message": "distress",
+                            "reason": "sensor_stuck",
+                            "severity": 3
+                        }
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(distress_package["reason"]))
+                        yield from self.ws_sender.send(json.dumps(distress_package))
+                        self.last_distress_sent = time.time()
+                        self.distress_called = None
                 time.sleep(5)
         finally:
             self.firmware.stop()
@@ -164,6 +176,33 @@ class EV3_Client:
                 stop_called = False
                 # Loop here, until either stop_now is triggered or requested time has elapsed
                 while time.time() - loop_start_time < turn_time:
+                    front_sensor_read = 10000
+                    try:
+                        front_sensor_read = self.firmware.front_sensor.value()
+                    except ValueError:
+                        pass
+                    if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                        # If sensor value is too low, back up, then leave this loop
+                        self.firmware.drive_backward(running_speed=75)
+                        backup_start = time.time()
+                        backup_time = 5 # Total time to back up if obstacle encountered, in seconds
+                        while time.time() - backup_start < backup_time:
+                            # If obstacle encountered at the back, stop now and continue to go forward
+                            back_sensor_read = 10000
+                            try:
+                                back_sensor_read = self.firmware.back_sensor.value()
+                            except ValueError:
+                                pass
+                            if self.stop_now:
+                                # Also listen for stop_now flag
+                                self.firmware.stop()
+                                self.stop_now = False
+                                stop_called = True
+                            if back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                                self.firmware.stop()
+                                break
+
+                        break
                     if self.stop_now:
                         print("Stopping random turning")
                         self.firmware.stop() # Stop all motors
@@ -172,6 +211,18 @@ class EV3_Client:
 
                 log.info("Switching to random forward driving.")
                 if not stop_called:
+                    while True:
+                        try:
+                            front_sensor_read = self.firmware.front_sensor.value()
+                            back_sensor_read = self.firmware.back_sensor.value()
+                        except ValueError:
+                            pass
+                        if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10 and back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                            # Robot stuck, stop and send distress signal
+                            self.firmware.stop()
+                            self.distress_called = time.time()
+                        else:
+                            break
                     currently_turning = False
                 else:
                     break
@@ -192,8 +243,27 @@ class EV3_Client:
                         front_sensor_read = self.firmware.front_sensor.value()
                     except ValueError:
                         pass
-                    if front_sensor_read < self.firmware.sensor_threshold * 10:
-                        # If sensor value is too low, leave this while loop
+                    if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                        # If sensor value is too low, back up, then leave this loop
+                        self.firmware.drive_backward(running_speed=75)
+                        backup_start = time.time()
+                        backup_time = 5 # Total time to back up if obstacle encountered, in seconds
+                        while time.time() - backup_start < backup_time:
+                            # If obstacle encountered at the back, stop now and continue to turn
+                            back_sensor_read = 10000
+                            try:
+                                back_sensor_read = self.firmware.back_sensor.value()
+                            except ValueError:
+                                pass
+                            if self.stop_now:
+                                # Also listen for stop_now flag
+                                self.firmware.stop()
+                                self.stop_now = False
+                                stop_called = True
+                            if back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                                self.firmware.stop()
+                                break
+
                         break
                     if self.stop_now:
                         # Stop the random walk now
@@ -205,9 +275,23 @@ class EV3_Client:
 
                 log.info("Switching to random turning.")
                 if not stop_called:
+                    while True:
+                        try:
+                            front_sensor_read = self.firmware.front_sensor.value()
+                            back_sensor_read = self.firmware.back_sensor.value()
+                        except ValueError:
+                            pass
+                        if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10 and back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                            # Robot stuck, stop and send distress signal
+                            self.firmware.stop()
+                            self.distress_called = time.time()
+                        else:
+                            break
                     currently_turning = True
                 else:
                     break
+
+                                                
 
     @asyncio.coroutine
     def timed_turn(self, loop, turn_time):

@@ -47,6 +47,18 @@ class Remote(object):
 
         self.ws.send(body)
 
+    def create_log_entry(self, message, severity=0, plant_id=None):
+        body = {
+            'type': "CREATE_LOG_ENTRY",
+            'data': {
+                message: message,
+                severity: severity,
+                plant_id: plant_id,
+            }
+        }
+
+        self.ws.send(body)
+
     def close(self):
         self.ws.close()
 
