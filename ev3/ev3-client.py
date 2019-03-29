@@ -16,10 +16,8 @@ class EV3_Client:
         self.ws_receiver = None
         self.ws_sender = None
         self.stop_now = False
-        self.random_thread = None
         self.distress_called = None
         self.last_distress_sent = time.time()
-        self.timed_turn_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
     def connect(self, sender=False):
@@ -109,11 +107,7 @@ class EV3_Client:
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
                 self.firmware.left_side_turn(run_forever=True, running_speed=75) # Turn forever
-                # Use a thread to moniter stop signals
-                tt_loop = asyncio.new_event_loop()
-                self.timed_turn_thread = threading.Thread(target=self.timed_turn, args=(tt_loop,))
-                self.timed_turn_thread.setDaemon(True)
-                self.timed_turn_thread.start()
+                self.timed_turn(time)
             else:
                 angle = int(package["angle"])
                 log.info("Turning left by {}.".format(angle))
@@ -127,11 +121,7 @@ class EV3_Client:
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
                 self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
-                # Use a thread to moniter stop signals
-                tt_loop = asyncio.new_event_loop()
-                self.timed_turn_thread = threading.Thread(target=self.timed_turn, args=(tt_loop,))
-                self.timed_turn_thread.setDaemon(True)
-                self.timed_turn_thread.start()
+                self.timed_turn(time)
             else:
                 angle = int(package["angle"])
                 log.info("Turning right by {}.".format(angle))
@@ -148,9 +138,6 @@ class EV3_Client:
             log.info("Going backward.")
             self.firmware.drive_backward(running_speed=100)
         elif action == "random":
-            # If a timed turn is already underway, don't do anything
-            # if self.timed_turn_thread is not None:
-            #     pass
             log.info("Performing random movements.")
             self.random_movement()
         else:
@@ -294,21 +281,68 @@ class EV3_Client:
 
     # Invoked when the plant is reached - turn, extend arms, etc.
     def approached_routine(self):
-        pass                                                
+        self.firmware.right_side_turn(run_by_deg=15, run_forever=False, running_speed=75)
+        self.firmware.raise_arm()      
 
-    @asyncio.coroutine
-    def timed_turn(self, loop, turn_time):
-        timer = time.time()
-        # While timer is not up, loop and listen for stop signals
-        while time.time() - timer < turn_time:
+    def timed_turn(self, turn_time):
+        turn_start_time = time.time()
+
+        log.info("Timed turun turn, time={}".format(turn_time))
+                
+        stop_called = False
+        # Loop here, until either stop_now is triggered or requested time has elapsed
+        while time.time() - turn_start_time < turn_time:
+            front_sensor_read = 10000
+            try:
+                front_sensor_read = self.firmware.front_sensor.value()
+            except ValueError:
+                pass
+            if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                # If sensor value is too low, back up, then leave this loop
+                self.firmware.drive_backward(running_speed=75)
+                backup_start = time.time()
+                backup_time = 5 # Total time to back up if obstacle encountered, in seconds
+                while time.time() - backup_start < backup_time:
+                    # If obstacle encountered at the back, stop now and continue to go forward
+                    back_sensor_read = 10000
+                    try:
+                        back_sensor_read = self.firmware.back_sensor.value()
+                    except ValueError:
+                        pass
+                    if self.stop_now:
+                        # Also listen for stop_now flag
+                        self.firmware.stop()
+                        self.stop_now = False
+                        stop_called = True
+                    if back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                        self.firmware.stop()
+                        break
+
+                break
             if self.stop_now:
-                print("STOP?")
-                # self.firmware.stop()
-                self.stop_now = True
-                SigFinish.interrupt_thread(self.random_thread)
-                self.random_thread.join()
-        
-        # Timer expired
+                print("Triggered stop_now, stopping timed turning...")
+                self.firmware.stop() # Stop all motors
+                self.stop_now = False
+                stop_called = True
+
+        if not stop_called:
+            # Check whether the robot is stuck - send a message if stuck until resolved, else continue
+            while True:
+                try:
+                    front_sensor_read = self.firmware.front_sensor.value()
+                    back_sensor_read = self.firmware.back_sensor.value()
+                except ValueError:
+                    pass
+                if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10 and back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                    # Robot stuck, stop and send distress signal
+                    self.firmware.stop()
+                    self.distress_called = time.time()
+                else:
+                    break
+        else:
+            pass
+
+        # Timer expired, stop the robot
         log.info("Finished turning, stopping.")
         self.firmware.stop()        
         
