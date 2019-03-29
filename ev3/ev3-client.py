@@ -23,7 +23,6 @@ class EV3_Client:
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
 
     def connect(self, sender=False):
-        log.info("INFO")
         try:
             if not sender:
                 log.info("Connecting receiver to Pi receiver...")
@@ -162,13 +161,15 @@ class EV3_Client:
         currently_turning = True
         while True:
             if currently_turning:
+                # Turning mode
                 turn_left = random.random() # Decide a direction to turn
-                # Turning forever
+                # Let wheels run forever
                 if turn_left < 0.5:
                     self.firmware.right_side_turn(run_forever=True, running_speed=75)
                 else:
                     self.firmware.left_side_turn(run_forever=True, running_speed=75)
 
+                # Start a "timer" to listen for stop signal and measure time elapsed for the loop
                 loop_start_time = time.time()
                 turn_time = random.randint(1, 10) # Length of turn, in seconds
                 log.info("Random turn, time={}".format(turn_time))
@@ -204,13 +205,13 @@ class EV3_Client:
 
                         break
                     if self.stop_now:
-                        print("Stopping random turning")
+                        print("Triggered stop_now, stopping random turning...")
                         self.firmware.stop() # Stop all motors
                         self.stop_now = False
                         stop_called = True
 
-                log.info("Switching to random forward driving.")
                 if not stop_called:
+                    log.info("Switching to random forward driving.")
                     while True:
                         try:
                             front_sensor_read = self.firmware.front_sensor.value()
@@ -267,14 +268,14 @@ class EV3_Client:
                         break
                     if self.stop_now:
                         # Stop the random walk now
-                        print("Stoping random walk")
+                        print("Triggered stop_now, stopping random turning...")
                         self.firmware.stop() # Stop all motors
                         # TODO: what happens next?
                         self.stop_now = False
                         stop_called = True
 
-                log.info("Switching to random turning.")
                 if not stop_called:
+                    log.info("Switching to random turning.")
                     while True:
                         try:
                             front_sensor_read = self.firmware.front_sensor.value()
@@ -291,7 +292,9 @@ class EV3_Client:
                 else:
                     break
 
-                                                
+    # Invoked when the plant is reached - turn, extend arms, etc.
+    def approached_routine(self):
+        pass                                                
 
     @asyncio.coroutine
     def timed_turn(self, loop, turn_time):

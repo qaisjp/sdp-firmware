@@ -15,6 +15,8 @@ class RemoteMotorController:
         self.ws_receiver = None
         self.ws_sender = None
         self.message = None
+        self.front_sensor_value = None
+        self.back_sensor_value = None
         self.remote = Remote("solskjaer")
 
     def connect(self, port_nr=8866, sender=True):
@@ -50,15 +52,21 @@ class RemoteMotorController:
 
     def process_message(self, msg):
         package = json.loads(msg)
-        severity = 0
+        valid_message = True
         if package["type"] == "sensor":
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
+            self.front_sensor_value = package["front_sensor"]
+            self.back_sensor_value = package["back_sensor"]
         elif package["type"] == "distress":
             log.info("[Pi < EV3] Distress signal received, reason: {}".format(package["message"]))
         elif package["type"] == "error":
             log.error("[Pi < EV3] Error message received, reason: {}".format(package["message"]))
             sys.exit(1)
-        self.remote.create_log_entry(package["type"], severity=package["severity"])
+        else:
+            log.warning("[Pi < EV3] Message received not recognisable")
+            valid_message = False
+        if valid_message:
+            self.remote.create_log_entry(package["type"], severity=package["severity"])
 
     def generate_action_package(self, msg):
         out = {
