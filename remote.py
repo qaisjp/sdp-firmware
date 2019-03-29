@@ -1,11 +1,13 @@
-from enum import Enum, unique
+from enum import Enum, unique, auto
 import websockets
 import json
 import asyncio
 import logging as log
 
+
 class UnhandledRPCTranslationException(Exception):
     pass
+
 
 @unique
 class RPCType(Enum):
@@ -13,6 +15,21 @@ class RPCType(Enum):
     DEMO_START = "demo/start"
     SETTINGS_PATCH = "settings/patch"
     EVENTS = "events"
+
+
+@unique
+class LogType(Enum):
+    UNKNOWN = auto()
+    PLANT_WATERED = auto()
+
+
+@unique
+class LogSeverity(Enum):
+    INFO = 0
+    SUCCESS = 1
+    WARNING = 2
+    DANGER = 3
+
 
 class Remote(object):
     def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
@@ -47,13 +64,30 @@ class Remote(object):
 
         self.ws.send(body)
 
-    def create_log_entry(self, message, severity=0, plant_id=None):
+    def create_log_entry(self, type, message, severity=LogSeverity.INFO,
+                         plant_id=None):
+
+        assert isinstance(type, LogType)
+        assert isinstance(severity, LogSeverity)
+
         body = {
             'type': "CREATE_LOG_ENTRY",
             'data': {
-                message: message,
-                severity: severity,
-                plant_id: plant_id,
+                'type': type.name,
+                'message': message,
+                'severity': severity.value,
+                'plant_id': plant_id,
+            }
+        }
+
+        self.ws.send(body)
+
+    def update_soil_moisture(self, plant, moisture):
+        body = {
+            'type': 'UPDATE_SOIL_MOISTURE',
+            'data': {
+                'plant': plant,
+                'moisture': moisture
             }
         }
 
