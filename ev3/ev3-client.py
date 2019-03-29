@@ -114,6 +114,8 @@ class EV3_Client:
 
         elif self.turn_issued:
             # If a turn is currently in progress, skip the message
+            log.info("Message ignored due to self.turn_issued is True")
+            log.info("Message content: {}".format(str(package)))
             return
         
         elif action == "left":
