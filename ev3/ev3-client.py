@@ -111,6 +111,7 @@ class EV3_Client:
             log.info("Stopping.")
             self.stop_now = True
             self.firmware.stop()
+            self.turn_issued = False
 
         elif self.turn_issued:
             # If a turn is currently in progress, skip the message
