@@ -1,4 +1,4 @@
-from enum import Enum, unique, auto
+from enum import Enum, unique
 import websockets
 import json
 import asyncio
@@ -19,8 +19,8 @@ class RPCType(Enum):
 
 @unique
 class LogType(Enum):
-    UNKNOWN = auto()
-    PLANT_WATERED = auto()
+    UNKNOWN = 0
+    PLANT_WATERED = 1
 
 
 @unique
@@ -51,7 +51,7 @@ class Remote(object):
             if type in self.callbacks:
                 self._translate_call(type, data, self.callbacks[type])
             else:
-                log.error("[REMOTE] Uncaught message for type", type, "with data", data)
+                log.error("[REMOTE] Uncaught message for type {} with data {}".format(type, data))
 
     def plant_capture_photo(self, plant_id: int, image):
         body = {
