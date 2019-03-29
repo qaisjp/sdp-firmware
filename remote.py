@@ -82,6 +82,17 @@ class Remote(object):
 
         self.ws.send(body)
 
+    def update_soil_moisture(self, plant, moisture):
+        body = {
+            'type': 'UPDATE_SOIL_MOISTURE',
+            'data': {
+                'plant': plant,
+                'moisture': moisture
+            }
+        }
+
+        self.ws.send(body)
+
     def close(self):
         self.ws.close()
 
