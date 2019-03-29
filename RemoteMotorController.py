@@ -5,7 +5,7 @@ import time
 import websockets
 import asyncio
 import json
-from remote import Remote
+from remote import Remote, LogSeverity, LogType
 
 
 class RemoteMotorController:
@@ -66,7 +66,7 @@ class RemoteMotorController:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False
         if valid_message:
-            self.remote.create_log_entry(package["type"], severity=package["severity"])
+            self.remote.create_log_entry(LogType.UNKNOWN, package["type"], severity=LogSeverity(package["severity"]))
 
     def generate_action_package(self, msg):
         out = {
