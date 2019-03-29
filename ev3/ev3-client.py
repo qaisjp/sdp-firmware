@@ -19,6 +19,7 @@ class EV3_Client:
         self.distress_called = None
         self.last_distress_sent = time.time()
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
+        self.turn_issued = False
 
     def connect(self, sender=False):
         try:
@@ -105,17 +106,23 @@ class EV3_Client:
         package = json.loads(msg)
         action = package["action"]
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
-        
+
         if action == "stop":
             log.info("Stopping.")
             self.stop_now = True
             self.firmware.stop()
 
+        elif self.turn_issued:
+            # If a turn is currently in progress, skip the message
+            return
+        
         elif action == "left":
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
+                self.turn_issued = True
                 self.firmware.left_side_turn(run_forever=True, running_speed=75) # Turn forever
                 self.timed_turn(time)
+                self.turn_issued = False
             else:
                 angle = int(package["angle"])
                 log.info("Turning left by {}.".format(angle))
@@ -124,12 +131,16 @@ class EV3_Client:
                 elif angle == 0:
                     pass
                 else:
+                    self.turn_issued = True
                     self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued = False
         elif action == "right":
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
+                self.turn_issued = True
                 self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
                 self.timed_turn(time)
+                self.turn_issued = False
             else:
                 angle = int(package["angle"])
                 log.info("Turning right by {}.".format(angle))
@@ -138,13 +149,17 @@ class EV3_Client:
                 elif angle == 0:
                     pass
                 else:
+                    self.turn_issued = True
                     self.firmware.right_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued = False
         elif action == "forward":
             log.info("Going forward.")
             self.firmware.drive_forward(running_speed=100)
+            # TODO: sensors
         elif action == "backward":
             log.info("Going backward.")
             self.firmware.drive_backward(running_speed=100)
+            # TODO: sensors
         elif action == "random":
             log.info("Performing random movements.")
             self.random_movement()
