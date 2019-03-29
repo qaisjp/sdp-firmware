@@ -73,10 +73,10 @@ class Remote(object):
         body = {
             'type': "CREATE_LOG_ENTRY",
             'data': {
-                type: type.name,
-                message: message,
-                severity: severity.value,
-                plant_id: plant_id,
+                'type': type.name,
+                'message': message,
+                'severity': severity.value,
+                'plant_id': plant_id,
             }
         }
 
