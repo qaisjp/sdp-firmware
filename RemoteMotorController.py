@@ -18,6 +18,7 @@ class RemoteMotorController:
         self.front_sensor_value = None
         self.back_sensor_value = None
         self.remote = Remote("solskjaer")
+        self.ev3_turning_constant = None
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -57,6 +58,9 @@ class RemoteMotorController:
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
             self.front_sensor_value = package["front_sensor"]
             self.back_sensor_value = package["back_sensor"]
+        elif package["type"] == "init":
+            log.info("[Pi < EV3] Received init messages: {}".format(str(package)))
+            self.ev3_turning_constant = package["turning_constant"]
         elif package["type"] == "distress":
             log.info("[Pi < EV3] Distress signal received, reason: {}".format(package["message"]))
         elif package["type"] == "error":

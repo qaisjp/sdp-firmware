@@ -67,6 +67,14 @@ class EV3_Client:
 
         log.info("Web socket connection established on {}:{}".format(self.ws_sender.host, self.ws_sender.port))
         try:
+            init_package = {
+                "type": "init",
+                "turning_constant": str(self.firmware.turning_constant),
+                "severity": 0
+            }
+            log.info("[EV3 > Pi] Sending init info: {}".format(json.dumps(init_package)))
+            yield from self.ws_sender.send(json.dumps(init_package))
+
             while True:
                 package = {
                     "type": "sensor",
