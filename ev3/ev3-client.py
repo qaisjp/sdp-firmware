@@ -152,7 +152,7 @@ class EV3_Client:
                     pass
                 else:
                     self.turn_issued = True
-                    self.firmware.left_side_turn(run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
                     self.turn_issued = False
         elif action == "right":
             if package["turn_timed"]:
