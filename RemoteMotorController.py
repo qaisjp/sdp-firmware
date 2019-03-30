@@ -5,6 +5,7 @@ import time
 import websockets
 import asyncio
 import json
+from remote import Remote, LogSeverity, LogType
 
 
 class RemoteMotorController:
@@ -14,6 +15,11 @@ class RemoteMotorController:
         self.ws_receiver = None
         self.ws_sender = None
         self.message = None
+        self.front_sensor_value = None
+        self.back_sensor_value = None
+        self.remote = Remote("solskjaer")
+        self.ev3_turning_constant = None
+        self.approach_complete = False
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -48,10 +54,27 @@ class RemoteMotorController:
 
     def process_message(self, msg):
         package = json.loads(msg)
-        if package["message"] == "sensor":
+        valid_message = True
+        if package["type"] == "sensor":
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
-        elif package["message"] == "distress":
-            log.info("[Pi < EV3] Distress signal received, reason:{}".format(package["reason"]))
+            self.front_sensor_value = package["front_sensor"]
+            self.back_sensor_value = package["back_sensor"]
+        elif package["type"] == "init":
+            log.info("[Pi < EV3] Received init messages: {}".format(str(package)))
+            self.ev3_turning_constant = package["turning_constant"]
+        elif package["type"] == "distress":
+            log.info("[Pi < EV3] Distress signal received, reason: {}".format(package["message"]))
+        elif package["type"] == "error":
+            log.error("[Pi < EV3] Error message received, reason: {}".format(package["message"]))
+            sys.exit(1)
+        elif package["type"] == "approach_complete":
+            log.error("[Pi < EV3] Approach completed.")
+            self.approach_complete = True
+        else:
+            log.warning("[Pi < EV3] Message received not recognisable")
+            valid_message = False
+        if valid_message:
+            self.remote.create_log_entry(LogType.UNKNOWN, package["type"], severity=LogSeverity(package["severity"]))
 
     def generate_action_package(self, msg):
         out = {
@@ -112,6 +135,12 @@ class RemoteMotorController:
     def stop(self):
         # log.info("Stopping.")
         package = self.generate_action_package("stop")
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def approached(self):
+        # log.info("Plant approached.")
+        package = self.generate_action_package("approached")
         self.message = json.dumps(package)
         time.sleep(1)
 

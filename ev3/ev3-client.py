@@ -16,14 +16,13 @@ class EV3_Client:
         self.ws_receiver = None
         self.ws_sender = None
         self.stop_now = False
-        self.random_thread = None
         self.distress_called = None
         self.last_distress_sent = time.time()
-        self.timed_turn_thread = None
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
+        self.turn_issued = False
+        self.approach_complete = False
 
     def connect(self, sender=False):
-        log.info("INFO")
         try:
             if not sender:
                 log.info("Connecting receiver to Pi receiver...")
@@ -70,9 +69,17 @@ class EV3_Client:
 
         log.info("Web socket connection established on {}:{}".format(self.ws_sender.host, self.ws_sender.port))
         try:
+            init_package = {
+                "type": "init",
+                "turning_constant": str(self.firmware.turning_constant),
+                "severity": 0
+            }
+            log.info("[EV3 > Pi] Sending init info: {}".format(json.dumps(init_package)))
+            yield from self.ws_sender.send(json.dumps(init_package))
+
             while True:
                 package = {
-                    "message": "sensor",
+                    "type": "sensor",
                     "front_sensor": str(self.firmware.front_sensor.value()),
                     "back_sensor": str(self.firmware.back_sensor.value()),
                     "severity": 0
@@ -83,15 +90,23 @@ class EV3_Client:
                 if self.distress_called is not None:
                     if self.distress_called - self.last_distress_sent > 5:
                         distress_package = {
-                            "message": "distress",
-                            "reason": "sensor_stuck",
+                            "type": "distress",
+                            "message": "sensor_stuck",
                             "severity": 3
                         }
-                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(distress_package["reason"]))
+                        log.info("[EV3 > Pi] Sending distress signal, reason: {}".format(distress_package["message"]))
                         yield from self.ws_sender.send(json.dumps(distress_package))
                         self.last_distress_sent = time.time()
                         self.distress_called = None
                 time.sleep(5)
+                if self.approach_complete:
+                    package = {
+                            "type": "approach_complete",
+                            "severity": 1
+                    }
+                    log.info("[EV3 > Pi] Sending approach complete message.")
+                    yield from self.ws_sender.send(json.dumps(package))
+                    self.approach_complete = False
         finally:
             self.firmware.stop()
             self.ws_sender.close()
@@ -100,21 +115,34 @@ class EV3_Client:
         package = json.loads(msg)
         action = package["action"]
         log.info("[EV3 < Pi] Received action \"{}\"".format(action))
-        
+
         if action == "stop":
             log.info("Stopping.")
             self.stop_now = True
             self.firmware.stop()
+            self.turn_issued = False
+    
+        elif action == "approached":
+            log.info("Plant approached, starting procedures.")
+            self.stop_now = True
+            self.firmware.stop()
+            self.turn_issued = True # Set this flag to true to ignore most messages
+            self.approached_routine() # Do approach routines
+            self.turn_issued = False
 
+        elif self.turn_issued:
+            # If a turn is currently in progress, skip the message
+            log.info("Message ignored due to self.turn_issued is True")
+            log.info("Message content: {}".format(str(package)))
+            return
+        
         elif action == "left":
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
+                self.turn_issued = True
                 self.firmware.left_side_turn(run_forever=True, running_speed=75) # Turn forever
-                # Use a thread to moniter stop signals
-                tt_loop = asyncio.new_event_loop()
-                self.timed_turn_thread = threading.Thread(target=self.timed_turn, args=(tt_loop,))
-                self.timed_turn_thread.setDaemon(True)
-                self.timed_turn_thread.start()
+                self.timed_turn(time)
+                self.turn_issued = False
             else:
                 angle = int(package["angle"])
                 log.info("Turning left by {}.".format(angle))
@@ -123,16 +151,16 @@ class EV3_Client:
                 elif angle == 0:
                     pass
                 else:
-                    self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued drive_forward
+                    self.firmware.lefdrive_forwardorever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued drive_forward
         elif action == "right":
-            if package["turn_timed"]:
-                time = int(package["turn_turnTime"])
-                self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
-                # Use a thread to moniter stop signals
-                tt_loop = asyncio.new_event_loop()
-                self.timed_turn_thread = threading.Thread(target=self.timed_turn, args=(tt_loop,))
-                self.timed_turn_thread.setDaemon(True)
-                self.timed_turn_thread.start()
+            if package["turn_timed"]:drive_forward
+                time = int(package["tdrive_forward
+                self.turn_issued = Trdrive_forward
+                self.firmware.right_sdrive_forwardspeed=75) # Turn forever
+                self.timed_turn(time)drive_forward
+                self.turn_issued = False
             else:
                 angle = int(package["angle"])
                 log.info("Turning right by {}.".format(angle))
@@ -141,17 +169,18 @@ class EV3_Client:
                 elif angle == 0:
                     pass
                 else:
+                    self.turn_issued = True
                     self.firmware.right_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued = False
         elif action == "forward":
             log.info("Going forward.")
             self.firmware.drive_forward(running_speed=100)
+            # TODO: sensors
         elif action == "backward":
             log.info("Going backward.")
             self.firmware.drive_backward(running_speed=100)
+            # TODO: sensors
         elif action == "random":
-            # If a timed turn is already underway, don't do anything
-            # if self.timed_turn_thread is not None:
-            #     pass
             log.info("Performing random movements.")
             self.random_movement()
         else:
@@ -162,13 +191,15 @@ class EV3_Client:
         currently_turning = True
         while True:
             if currently_turning:
+                # Turning mode
                 turn_left = random.random() # Decide a direction to turn
-                # Turning forever
+                # Let wheels run forever
                 if turn_left < 0.5:
                     self.firmware.right_side_turn(run_forever=True, running_speed=75)
                 else:
                     self.firmware.left_side_turn(run_forever=True, running_speed=75)
 
+                # Start a "timer" to listen for stop signal and measure time elapsed for the loop
                 loop_start_time = time.time()
                 turn_time = random.randint(1, 10) # Length of turn, in seconds
                 log.info("Random turn, time={}".format(turn_time))
@@ -204,13 +235,13 @@ class EV3_Client:
 
                         break
                     if self.stop_now:
-                        print("Stopping random turning")
+                        print("Triggered stop_now, stopping random turning...")
                         self.firmware.stop() # Stop all motors
                         self.stop_now = False
                         stop_called = True
 
-                log.info("Switching to random forward driving.")
                 if not stop_called:
+                    log.info("Switching to random forward driving.")
                     while True:
                         try:
                             front_sensor_read = self.firmware.front_sensor.value()
@@ -267,14 +298,14 @@ class EV3_Client:
                         break
                     if self.stop_now:
                         # Stop the random walk now
-                        print("Stoping random walk")
+                        print("Triggered stop_now, stopping random turning...")
                         self.firmware.stop() # Stop all motors
                         # TODO: what happens next?
                         self.stop_now = False
                         stop_called = True
 
-                log.info("Switching to random turning.")
                 if not stop_called:
+                    log.info("Switching to random turning.")
                     while True:
                         try:
                             front_sensor_read = self.firmware.front_sensor.value()
@@ -291,21 +322,70 @@ class EV3_Client:
                 else:
                     break
 
-                                                
+    # Invoked when the plant is reached - turn, extend arms, etc.
+    def approached_routine(self):
+        self.firmware.drive_forward(run_forever=False, running_time=1, running_speed=75)
+        self.firmware.right_side_turn(run_by_deg=15, run_forever=False, running_speed=75)
+        self.firmware.raise_arm()
 
-    @asyncio.coroutine
-    def timed_turn(self, loop, turn_time):
-        timer = time.time()
-        # While timer is not up, loop and listen for stop signals
-        while time.time() - timer < turn_time:
+    def timed_turn(self, turn_time):
+        turn_start_time = time.time()
+        log.info("Timed turn, time={}".format(turn_time))
+                
+        stop_called = False
+        # Loop here, until either stop_now is triggered or requested time has elapsed
+        while time.time() - turn_start_time < turn_time:
+            front_sensor_read = 10000
+            try:
+                front_sensor_read = self.firmware.front_sensor.value()
+            except ValueError:
+                pass
+            if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                # If sensor value is too low, back up, then leave this loop
+                self.firmware.drive_backward(running_speed=75)
+                backup_start = time.time()
+                backup_time = 5 # Total time to back up if obstacle encountered, in seconds
+                while time.time() - backup_start < backup_time:
+                    # If obstacle encountered at the back, stop now and continue to go forward
+                    back_sensor_read = 10000
+                    try:
+                        back_sensor_read = self.firmware.back_sensor.value()
+                    except ValueError:
+                        pass
+                    if self.stop_now:
+                        # Also listen for stop_now flag
+                        self.firmware.stop()
+                        self.stop_now = False
+                        stop_called = True
+                    if back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                        self.firmware.stop()
+                        break
+
+                break
             if self.stop_now:
-                print("STOP?")
-                # self.firmware.stop()
-                self.stop_now = True
-                SigFinish.interrupt_thread(self.random_thread)
-                self.random_thread.join()
-        
-        # Timer expired
+                print("Triggered stop_now, stopping timed turning...")
+                self.firmware.stop() # Stop all motors
+                self.stop_now = False
+                stop_called = True
+
+        if not stop_called:
+            # Check whether the robot is stuck - send a message if stuck until resolved, else continue
+            while True:
+                try:
+                    front_sensor_read = self.firmware.front_sensor.value()
+                    back_sensor_read = self.firmware.back_sensor.value()
+                except ValueError:
+                    pass
+                if front_sensor_read < self.firmware.sensor_obstacle_threshold * 10 and back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                    # Robot stuck, stop and send distress signal
+                    self.firmware.stop()
+                    self.distress_called = time.time()
+                else:
+                    break
+        else:
+            pass
+
+        # Timer expired, stop the robot
         log.info("Finished turning, stopping.")
         self.firmware.stop()        
         
@@ -319,24 +399,54 @@ def socket_receiver_establish_loop(client, loop):
     client.connect(sender=False)
     loop.run_forever()
 
+@asyncio.coroutine
+def socket_error_message_loop(msg):
+
+    while True:
+        try:
+            ws = yield from websockets.connect("ws://10.42.0.1:19221", ping_interval=None)
+            break
+        except ConnectionRefusedError:
+            # Connection refused, repeat trying in a few seconds
+            log.warn("Connection to port {} refused, trying again in 5 seconds.".format(19221))
+            yield from asyncio.sleep(5)
+            continue
+    
+    try:
+        error_package = {
+                            "type": "error",
+                            "message": msg,
+                            "severity": 3
+                        }
+        yield from ws.send(json.dumps(error_package))
+    finally:
+        yield from ws.close()
+        sys.exit(1)
+
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-    ev3 = EV3_Client()
-
     try:
-        ws_receiver = asyncio.new_event_loop()
-        ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
-        ws_receiver_thread.setDaemon(True)
-        ws_receiver_thread.start()
+        ev3 = EV3_Client()
 
-        ws_sender = asyncio.new_event_loop()
-        ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
-        ws_sender_thread.setDaemon(True)
-        ws_sender_thread.start()
+        try:
+            ws_receiver = asyncio.new_event_loop()
+            ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
+            ws_receiver_thread.setDaemon(True)
+            ws_receiver_thread.start()
 
-        asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt:
-        ev3.firmware.stop()
+            ws_sender = asyncio.new_event_loop()
+            ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
+            ws_sender_thread.setDaemon(True)
+            ws_sender_thread.start()
+
+            asyncio.get_event_loop().run_forever()
+        except KeyboardInterrupt:
+            ev3.firmware.stop()
+    except IOError as e:
+        log.error("\033[1;37;41m[EV3] Error encountered, attempting to send message to Pi...\033[0m")
+        log.info("[EV3] Error details: {}".format(str(e)))
+        asyncio.get_event_loop().run_until_complete(socket_error_message_loop(str(e)))
+
 
 if __name__ == "__main__":
     main()

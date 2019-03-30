@@ -4,8 +4,10 @@ import json
 import asyncio
 import logging as log
 
+
 class UnhandledRPCTranslationException(Exception):
     pass
+
 
 @unique
 class RPCType(Enum):
@@ -13,6 +15,21 @@ class RPCType(Enum):
     DEMO_START = "demo/start"
     SETTINGS_PATCH = "settings/patch"
     EVENTS = "events"
+
+
+@unique
+class LogType(Enum):
+    UNKNOWN = 0
+    PLANT_WATERED = 1
+
+
+@unique
+class LogSeverity(Enum):
+    INFO = 0
+    SUCCESS = 1
+    WARNING = 2
+    DANGER = 3
+
 
 class Remote(object):
     def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
@@ -34,7 +51,7 @@ class Remote(object):
             if type in self.callbacks:
                 self._translate_call(type, data, self.callbacks[type])
             else:
-                log.error("[REMOTE] Uncaught message for type", type, "with data", data)
+                log.error("[REMOTE] Uncaught message for type {} with data {}".format(type, data))
 
     def plant_capture_photo(self, plant_id: int, image):
         body = {
@@ -47,13 +64,30 @@ class Remote(object):
 
         self.ws.send(body)
 
-    def create_log_entry(self, message, severity=0, plant_id=None):
+    def create_log_entry(self, type, message, severity=LogSeverity.INFO,
+                         plant_id=None):
+
+        assert isinstance(type, LogType)
+        assert isinstance(severity, LogSeverity)
+
         body = {
             'type': "CREATE_LOG_ENTRY",
             'data': {
-                message: message,
-                severity: severity,
-                plant_id: plant_id,
+                'type': type.name,
+                'message': message,
+                'severity': severity.value,
+                'plant_id': plant_id,
+            }
+        }
+
+        self.ws.send(body)
+
+    def update_soil_moisture(self, plant, moisture):
+        body = {
+            'type': 'UPDATE_SOIL_MOISTURE',
+            'data': {
+                'plant': plant,
+                'moisture': moisture
             }
         }
 

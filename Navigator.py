@@ -240,7 +240,8 @@ class Navigator:
         :param plant:   Plant seen by the robot
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
-        return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
+        # return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
+        return self.remote_motor_controller.front_sensor_value < 400
 
     def get_bb_area(self, prediction):
         """

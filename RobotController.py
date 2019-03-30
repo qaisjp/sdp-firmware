@@ -10,6 +10,7 @@ from remote import Remote, RPCType
 import config
 import asyncio
 import os
+import time
 
 
 class RobotController:
@@ -63,7 +64,13 @@ class RobotController:
         self.navigator.on_new_frame(predictions)
 
     def on_plant_found(self):
-        pass
+        # Take a picture here
+        # Approach again?
+        # Send message to initiate approach command, until instructed to continue
+        self.navigator.remote_motor_controller.approached()
+        while not self.navigator.remote_motor_controller.approach_complete:
+            pass
+        self.navigator.remote_motor_controller.approach_complete = False
 
     def on_plant_seen(self):
         qr_codes = self.qr_reader.identify(self.received_frame)
