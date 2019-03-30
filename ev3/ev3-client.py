@@ -133,6 +133,7 @@ class EV3_Client:
             self.turn_issued = True # Set this flag to true to ignore most messages
             self.approached_routine() # Do approach routines
             self.turn_issued = False
+            self.approach_complete = True
 
         elif self.turn_issued:
             # If a turn is currently in progress, skip the message
@@ -339,6 +340,7 @@ class EV3_Client:
         self.firmware.raise_arm()
         time.sleep(5)
         self.firmware.lower_arm()
+        self.firmware.drive_backward(run_forever=False, running_time=3, running_speed=75)
 
     def timed_turn(self, turn_time):
         turn_start_time = time.time()
