@@ -182,6 +182,7 @@ class Navigator:
             #self.remote_motor_controller.stop()
 
             if not self.is_plant_approached(plant):
+                print(self.remote_motor_controller.front_sensor_value)
                 log.info("Moving forward...")
                 # Plant is not in front of the robot.
                 self.remote_motor_controller.go_forward()
