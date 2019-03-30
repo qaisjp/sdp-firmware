@@ -133,12 +133,6 @@ class Navigator:
                 # Operating in normal mode.
                 self.robot_controller.on_plant_seen()
                 self.follow_plant_aux(plant)
-                # # If this QR code is the same as the last QR code read, skip this plant to another plant
-                # if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
-                #     self.follow_plant_aux(plant)
-                # else:
-                #     self.remote_motor_controller.random_walk()
-                #     time.sleep(5) # Giving robot enough time to escape from this plant
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
@@ -222,6 +216,13 @@ class Navigator:
         else:
             # Plant isn't centered. Turn right/left.
             log.info("Plant not in the centre.")
+
+            if self.is_plant_approached:
+                # If threshold value is reached, back off and try again?
+                self.remote_motor_controller.stop()
+                self.remote_motor_controller.go_backward()
+                time.sleep(3)
+                return
 
             # Approximate angle of rotation
             area = self.get_bb_area(plant)
