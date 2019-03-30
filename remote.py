@@ -63,7 +63,8 @@ class Remote(object):
             }
         }
 
-        self.ws.send(body)
+        if hasattr(self, "ws"):
+            self.ws.send(body)
 
     def create_log_entry(self, type, message, severity=LogSeverity.INFO,
                          plant_id=None):
@@ -81,7 +82,8 @@ class Remote(object):
             }
         }
 
-        self.ws.send(body)
+        if hasattr(self, "ws"):
+            self.ws.send(body)
 
     def update_soil_moisture(self, plant, moisture):
         body = {
@@ -92,10 +94,12 @@ class Remote(object):
             }
         }
 
-        self.ws.send(body)
+        if hasattr(self, "ws"):
+            self.ws.send(body)
 
     def close(self):
-        self.ws.close()
+        if hasattr(self, "ws"):
+            self.ws.close()
 
     def add_callback(self, type, fn):
         self.callbacks[type] = fn
