@@ -78,15 +78,18 @@ class EV3_Client:
             # yield from self.ws_sender.send(json.dumps(init_package))
 
             while True:
-                package = {
-                    "type": "sensor",
-                    "front_sensor": str(self.firmware.front_sensor.value()),
-                    "back_sensor": str(self.firmware.back_sensor.value()),
-                    "severity": 0
-                }
-                log.info("[EV3 > Pi] Sending sensor data (\"front_sensor\": {}, \"back_sensor\": {})"
-                    .format(package["front_sensor"], package["back_sensor"]))
-                yield from self.ws_sender.send(json.dumps(package))
+                try:
+                    package = {
+                        "type": "sensor",
+                        "front_sensor": str(self.firmware.front_sensor.value()),
+                        "back_sensor": str(self.firmware.back_sensor.value()),
+                        "severity": 0
+                    }
+                    log.info("[EV3 > Pi] Sending sensor data (\"front_sensor\": {}, \"back_sensor\": {})"
+                        .format(package["front_sensor"], package["back_sensor"]))
+                    yield from self.ws_sender.send(json.dumps(package))
+                except ValueError as e:
+                    log.error("[EV3] Value error: {}".format(e))
                 if self.distress_called is not None:
                     if self.distress_called - self.last_distress_sent > 5:
                         distress_package = {
