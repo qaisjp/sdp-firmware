@@ -190,6 +190,7 @@ class EV3_Client:
                 log.info("Message ignored due to self.random_issued is True")
                 log.info("Message content: {}".format(str(package)))
             else:
+                self.stop_now = False
                 self.random_issued = True
                 log.info("Performing random movements.")
                 self.random_movement()
