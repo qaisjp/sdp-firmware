@@ -125,6 +125,7 @@ class EV3_Client:
             self.stop_now = True
             self.firmware.stop()
             self.turn_issued = False
+            self.random_issued = False
     
         elif action == "approached":
             log.info("Plant approached, starting procedures.")
@@ -159,6 +160,8 @@ class EV3_Client:
                     self.turn_issued = True
                     self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
                     self.turn_issued = False
+            self.random_issued = False
+            self.stop_now = False
         elif action == "right":
             if package["turn_timed"]:
                 time = int(package["turn_turnTime"])
@@ -177,13 +180,19 @@ class EV3_Client:
                     self.turn_issued = True
                     self.firmware.right_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
                     self.turn_issued = False
+            self.random_issued = False
+            self.stop_now = False
         elif action == "forward":
             log.info("Going forward.")
             self.firmware.drive_forward(running_speed=100)
+            self.random_issued = False
+            self.stop_now = False
             # TODO: sensors
         elif action == "backward":
             log.info("Going backward.")
             self.firmware.drive_backward(running_speed=100)
+            self.random_issued = False
+            self.stop_now = False
             # TODO: sensors
         elif action == "random":
             if self.random_issued:
@@ -195,6 +204,7 @@ class EV3_Client:
                 log.info("Performing random movements.")
                 self.random_movement()
                 self.random_issued = False
+            self.stop_now = False
         else:
             log.info("Invalid command.")
             self.firmware.stop()
