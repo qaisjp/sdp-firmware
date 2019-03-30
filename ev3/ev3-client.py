@@ -102,7 +102,7 @@ class EV3_Client:
                         yield from self.ws_sender.send(json.dumps(distress_package))
                         self.last_distress_sent = time.time()
                         self.distress_called = None
-                time.sleep(5)
+                time.sleep(1)
                 if self.approach_complete:
                     package = {
                             "type": "approach_complete",
