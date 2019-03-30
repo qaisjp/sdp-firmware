@@ -227,7 +227,7 @@ class Navigator:
                 # If threshold value is reached, back off and try again?
                 self.remote_motor_controller.stop()
                 self.remote_motor_controller.go_backward()
-                time.sleep(3)
+                # time.sleep(3)
                 self.remote_motor_controller.stop()
                 self.backing = True
                 return
@@ -269,7 +269,7 @@ class Navigator:
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
         # return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
-        return self.remote_motor_controller.front_sensor_value < 400
+        return self.remote_motor_controller.front_sensor_value < 300
 
     def get_bb_area(self, prediction):
         """
