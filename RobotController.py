@@ -32,6 +32,7 @@ class RobotController:
         self.qr_reader = QRReader()
         self.last_qr_approached = None
         self.current_qr_approached = None
+        self.approach_complete = True
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -92,6 +93,7 @@ class RobotController:
         #     pass
 
     def on_approach_complete(self):
+        self.approach_complete = True
         self.last_qr_approached = self.current_qr_approached
         self.navigator.remote_motor_controller.approach_complete = True
 
