@@ -57,8 +57,8 @@ class RemoteMotorController:
         valid_message = True
         if package["type"] == "sensor":
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
-            self.front_sensor_value = package["front_sensor"]
-            self.back_sensor_value = package["back_sensor"]
+            self.front_sensor_value = int(package["front_sensor"])
+            self.back_sensor_value = int(package["back_sensor"])
         elif package["type"] == "init":
             log.info("[Pi < EV3] Received init messages: {}".format(str(package)))
             self.ev3_turning_constant = package["turning_constant"]
