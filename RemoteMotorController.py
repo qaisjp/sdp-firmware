@@ -9,8 +9,9 @@ from remote import Remote, LogSeverity, LogType
 
 
 class RemoteMotorController:
-    def __init__(self, address="localhost"):
+    def __init__(self, robot_controller, address="localhost"):
         log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        self.robot_controller = robot_controller
         self.address_nr = address
         self.ws_receiver = None
         self.ws_sender = None
@@ -19,7 +20,7 @@ class RemoteMotorController:
         self.back_sensor_value = None
         self.remote = Remote("solskjaer")
         self.ev3_turning_constant = None
-        self.approach_complete = False
+        self.approach_complete = True
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -70,6 +71,7 @@ class RemoteMotorController:
         elif package["type"] == "approach_complete":
             log.error("[Pi < EV3] Approach completed.")
             self.approach_complete = True
+            self.robot_controller.approach_complete()
         else:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False

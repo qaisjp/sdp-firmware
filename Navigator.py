@@ -65,7 +65,7 @@ class Navigator:
 
         self.frame_count = None
 
-        self.remote_motor_controller = RemoteMotorController()
+        self.remote_motor_controller = RemoteMotorController(self.robot_controller)
         self.backing = False
 
         # Load angle approximation model.
@@ -105,6 +105,10 @@ class Navigator:
         Changes state of the class after new predictions are received.
         :return:
         """
+
+        if not self.robot_controller.approach_complete:
+            log.info("Plant approached, skipping this frame")
+            return
 
         # Wait n frames until turn is complete
         if self.frame_count != None:

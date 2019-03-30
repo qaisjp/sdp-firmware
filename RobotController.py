@@ -86,11 +86,15 @@ class RobotController:
         # Take a picture here
         # Approach again?
         # Send message to initiate approach command, until instructed to continue
+        self.approach_complete = False
         self.navigator.remote_motor_controller.approached()
-        while not self.navigator.remote_motor_controller.approach_complete:
-            pass
+        # while not self.navigator.remote_motor_controller.approach_complete:
+        #     pass
+
+    def on_approach_complete(self):
         self.last_qr_approached = self.current_qr_approached
-        self.navigator.remote_motor_controller.approach_complete = False
+        self.navigator.remote_motor_controller.approach_complete = True
+
 
     def on_plant_seen(self):
         pass
