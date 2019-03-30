@@ -114,15 +114,17 @@ class RemoteMotorController:
         self.message = json.dumps(package)
         time.sleep(1)
 
-    def go_forward(self):
+    def go_forward(self, forward_time=-1):
         # log.info("Going forward.")
         package = self.generate_action_package("forward")
+        package["time"] = forward_time
         self.message = json.dumps(package)
         time.sleep(1)
 
-    def go_backward(self):
+    def go_backward(self, backup_time=-1):
         # log.info("Going backward.")
         package = self.generate_action_package("backward")
+        package["time"] = backup_time
         self.message = json.dumps(package)
         time.sleep(1)
 

@@ -223,6 +223,7 @@ class Navigator:
                 self.remote_motor_controller.stop()
                 self.remote_motor_controller.go_backward()
                 time.sleep(3)
+                self.remote_motor_controller.stop()
                 return
 
             # Approximate angle of rotation
