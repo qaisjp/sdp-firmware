@@ -218,12 +218,12 @@ class Navigator:
             # Plant isn't centered. Turn right/left.
             log.info("Plant not in the centre.")
 
-            # if self.is_plant_approached:
-            #     # If threshold value is reached, back off and try again?
-            #     self.remote_motor_controller.stop()
-            #     self.remote_motor_controller.go_backward()
-            #     time.sleep(3)
-            #     return
+            if self.is_plant_approached:
+                # If threshold value is reached, back off and try again?
+                self.remote_motor_controller.stop()
+                self.remote_motor_controller.go_backward()
+                time.sleep(3)
+                return
 
             # Approximate angle of rotation
             area = self.get_bb_area(plant)
