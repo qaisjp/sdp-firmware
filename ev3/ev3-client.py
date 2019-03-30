@@ -325,8 +325,10 @@ class EV3_Client:
     # Invoked when the plant is reached - turn, extend arms, etc.
     def approached_routine(self):
         self.firmware.drive_forward(run_forever=False, running_time=1, running_speed=75)
-        self.firmware.right_side_turn(run_by_deg=15, run_forever=False, running_speed=75)
+        self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
         self.firmware.raise_arm()
+        time.sleep(5)
+        self.firmware.lower_arm()
 
     def timed_turn(self, turn_time):
         turn_start_time = time.time()
