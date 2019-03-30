@@ -81,6 +81,7 @@ class RobotController:
         qr_codes = self.qr_reader.identify(self.received_frame)
         if len(qr_codes) == 0:
             log.warning("No plant QR found.")
+            self.current_qr_approached = None
         else:
             for qr in qr_codes:
                 self.current_qr_approached = qr
