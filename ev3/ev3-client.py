@@ -20,6 +20,7 @@ class EV3_Client:
         self.last_distress_sent = time.time()
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
         self.turn_issued = False
+        self.random_issued = False
         self.approach_complete = False
 
     def connect(self, sender=False):
@@ -184,8 +185,14 @@ class EV3_Client:
             self.firmware.drive_backward(running_speed=100)
             # TODO: sensors
         elif action == "random":
-            log.info("Performing random movements.")
-            self.random_movement()
+            if self.random_issued:
+                log.info("Message ignored due to self.random_issued is True")
+                log.info("Message content: {}".format(str(package)))
+            else:
+                self.random_issued = True
+                log.info("Performing random movements.")
+                self.random_movement()
+                self.random_issued = False
         else:
             log.info("Invalid command.")
             self.firmware.stop()
