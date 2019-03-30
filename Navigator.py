@@ -132,7 +132,11 @@ class Navigator:
             else:
                 # Operating in normal mode.
                 self.robot_controller.on_plant_seen()
-                self.follow_plant_aux(plant)
+                # If this QR code is the same as the last QR code read, skip this plant to another plant
+                if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached:
+                    self.follow_plant_aux(plant)
+                else:
+                    self.remote_motor_controller.random_walk()
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:

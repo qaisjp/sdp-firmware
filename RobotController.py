@@ -30,6 +30,8 @@ class RobotController:
         self.sched = Scheduler()
         self.received_frame = None
         self.qr_reader = QRReader()
+        self.last_qr_approached = None
+        self.current_qr_approached = None
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -72,6 +74,7 @@ class RobotController:
         self.navigator.remote_motor_controller.approached()
         while not self.navigator.remote_motor_controller.approach_complete:
             pass
+        self.last_qr_approached = self.current_qr_approached
         self.navigator.remote_motor_controller.approach_complete = False
 
     def on_plant_seen(self):
@@ -80,6 +83,7 @@ class RobotController:
             log.warning("No plant QR found.")
         else:
             for qr in qr_codes:
+                self.current_qr_approached = qr
                 log.info("Plant QR found: {}".format(qr))
 
     def on_events_received(self, data):
