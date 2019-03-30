@@ -132,12 +132,12 @@ class Navigator:
             else:
                 # Operating in normal mode.
                 self.robot_controller.on_plant_seen()
-                # If this QR code is the same as the last QR code read, skip this plant to another plant
-                if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
-                    self.follow_plant_aux(plant)
-                else:
-                    self.remote_motor_controller.random_walk()
-                    time.sleep(5) # Giving robot enough time to escape from this plant
+                # # If this QR code is the same as the last QR code read, skip this plant to another plant
+                # if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
+                #     self.follow_plant_aux(plant)
+                # else:
+                #     self.remote_motor_controller.random_walk()
+                #     time.sleep(5) # Giving robot enough time to escape from this plant
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
@@ -197,15 +197,27 @@ class Navigator:
                 self.follow_mode = False
                 self.remote_motor_controller.stop()
 
-                # Report to robot controller.
-                self.robot_controller.on_plant_found()
+                # Read the QR code and make a decision here
+                self.robot_controller.read_qr_code()
+                # If this QR code is the same as the last QR code read, skip this plant to another plant
+                if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
+                    log.info("Plant is found and QR is read, continue")
+                    # Report to robot controller.
+                    self.robot_controller.on_plant_found()
 
-                # Start another random walk.
-                self.random_search_mode = True
-                self.remote_motor_controller.random_walk()
+                    # Start another random walk.
+                    self.random_search_mode = True
+                    self.remote_motor_controller.random_walk()
 
-                # Disable escape mode after escape_delay seconds.
-                threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
+                    # Disable escape mode after escape_delay seconds.
+                    threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
+                else:
+                    log.info("Plant found, but QR code is not readable or it is the last visited plant, do random walk now")
+                    self.remote_motor_controller.go_backward()
+                    time.sleep(3)
+                    self.remote_motor_controller.random_walk()
+                    time.sleep(5) # Giving robot enough time to escape from this plant
+
         else:
             # Plant isn't centered. Turn right/left.
             log.info("Plant not in the centre.")

@@ -67,6 +67,17 @@ class RobotController:
         self.received_frame = frame
         self.navigator.on_new_frame(predictions)
 
+    def read_qr_code(self):
+        # Read the QR code
+        qr_codes = self.qr_reader.identify(self.received_frame)
+        if len(qr_codes) == 0:
+            log.warning("No plant QR found.")
+            self.current_qr_approached = None
+        else:
+            for qr in qr_codes:
+                self.current_qr_approached = qr
+                log.info("Plant QR found: {}".format(qr))
+
     def on_plant_found(self):
         # Take a picture here
         # Approach again?
@@ -78,14 +89,7 @@ class RobotController:
         self.navigator.remote_motor_controller.approach_complete = False
 
     def on_plant_seen(self):
-        qr_codes = self.qr_reader.identify(self.received_frame)
-        if len(qr_codes) == 0:
-            log.warning("No plant QR found.")
-            self.current_qr_approached = None
-        else:
-            for qr in qr_codes:
-                self.current_qr_approached = qr
-                log.info("Plant QR found: {}".format(qr))
+        pass
 
     def on_events_received(self, data):
         self.sched.push_events(list(map(Event.from_dict, data)))
