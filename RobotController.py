@@ -44,7 +44,9 @@ class RobotController:
             self.remote.add_callback(
                 RPCType.EVENTS, self.on_events_received)
 
-            threading.Thread(target=self.thread_remote, daemon=True).start()
+            rm_thread = threading.Thread(target=self.thread_remote, daemon=True)
+            rm_thread.start()
+            rm_thread.join()
 
         threading.Thread(target=self.vision.start).start()
 

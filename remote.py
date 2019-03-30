@@ -42,6 +42,7 @@ class Remote(object):
     def connect(self):
         log.info("[REMOTE] Connect {}".format(self.id))
         self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
+        log.info("WebSockets connection established on {}".format(self.host+"/stream/"+self.id))
         while True:
             message = yield from self.ws.recv()
             result = json.loads(message)
