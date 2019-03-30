@@ -151,15 +151,15 @@ class EV3_Client:
                 elif angle == 0:
                     pass
                 else:
-                    self.turn_issued drive_forward
-                    self.firmware.lefdrive_forwardorever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
-                    self.turn_issued drive_forward
+                    self.turn_issued = True
+                    self.firmware.left_side_turn(run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued = False
         elif action == "right":
-            if package["turn_timed"]:drive_forward
-                time = int(package["tdrive_forward
-                self.turn_issued = Trdrive_forward
-                self.firmware.right_sdrive_forwardspeed=75) # Turn forever
-                self.timed_turn(time)drive_forward
+            if package["turn_timed"]:
+                time = int(package["turn_turnTime"])
+                self.turn_issued = True
+                self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
+                self.timed_turn(time)
                 self.turn_issued = False
             else:
                 angle = int(package["angle"])
