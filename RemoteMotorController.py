@@ -19,6 +19,7 @@ class RemoteMotorController:
         self.back_sensor_value = None
         self.remote = Remote("solskjaer")
         self.ev3_turning_constant = None
+        self.approach_complete = False
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -66,6 +67,9 @@ class RemoteMotorController:
         elif package["type"] == "error":
             log.error("[Pi < EV3] Error message received, reason: {}".format(package["message"]))
             sys.exit(1)
+        elif package["type"] == "approach_complete":
+            log.error("[Pi < EV3] Approach completed.")
+            self.approach_complete = True
         else:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False
@@ -131,6 +135,12 @@ class RemoteMotorController:
     def stop(self):
         # log.info("Stopping.")
         package = self.generate_action_package("stop")
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def approached(self):
+        # log.info("Plant approached.")
+        package = self.generate_action_package("approached")
         self.message = json.dumps(package)
         time.sleep(1)
 

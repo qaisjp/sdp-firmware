@@ -20,6 +20,7 @@ class EV3_Client:
         self.last_distress_sent = time.time()
         self.firmware = firmware.GrowBot(-1,-1) # Battery/water levels to be implemented
         self.turn_issued = False
+        self.approach_complete = False
 
     def connect(self, sender=False):
         try:
@@ -98,6 +99,14 @@ class EV3_Client:
                         self.last_distress_sent = time.time()
                         self.distress_called = None
                 time.sleep(5)
+                if self.approach_complete:
+                    package = {
+                            "type": "approach_complete",
+                            "severity": 1
+                    }
+                    log.info("[EV3 > Pi] Sending approach complete message.")
+                    yield from self.ws_sender.send(json.dumps(package))
+                    self.approach_complete = False
         finally:
             self.firmware.stop()
             self.ws_sender.close()
@@ -111,6 +120,14 @@ class EV3_Client:
             log.info("Stopping.")
             self.stop_now = True
             self.firmware.stop()
+            self.turn_issued = False
+    
+        elif action == "approached":
+            log.info("Plant approached, starting procedures.")
+            self.stop_now = True
+            self.firmware.stop()
+            self.turn_issued = True # Set this flag to true to ignore most messages
+            self.approached_routine() # Do approach routines
             self.turn_issued = False
 
         elif self.turn_issued:
@@ -134,15 +151,15 @@ class EV3_Client:
                 elif angle == 0:
                     pass
                 else:
-                    self.turn_issued = True
-                    self.firmware.left_side_turn(running_speed=75, run_forever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
-                    self.turn_issued = False
+                    self.turn_issued drive_forward
+                    self.firmware.lefdrive_forwardorever=False, run_by_deg=True, twin_turn=True, turn_degree=angle)
+                    self.turn_issued drive_forward
         elif action == "right":
-            if package["turn_timed"]:
-                time = int(package["turn_turnTime"])
-                self.turn_issued = True
-                self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
-                self.timed_turn(time)
+            if package["turn_timed"]:drive_forward
+                time = int(package["tdrive_forward
+                self.turn_issued = Trdrive_forward
+                self.firmware.right_sdrive_forwardspeed=75) # Turn forever
+                self.timed_turn(time)drive_forward
                 self.turn_issued = False
             else:
                 angle = int(package["angle"])
@@ -307,13 +324,13 @@ class EV3_Client:
 
     # Invoked when the plant is reached - turn, extend arms, etc.
     def approached_routine(self):
+        self.firmware.drive_forward(run_forever=False, running_time=1, running_speed=75)
         self.firmware.right_side_turn(run_by_deg=15, run_forever=False, running_speed=75)
-        self.firmware.raise_arm()      
+        self.firmware.raise_arm()
 
     def timed_turn(self, turn_time):
         turn_start_time = time.time()
-
-        log.info("Timed turun turn, time={}".format(turn_time))
+        log.info("Timed turn, time={}".format(turn_time))
                 
         stop_called = False
         # Loop here, until either stop_now is triggered or requested time has elapsed
