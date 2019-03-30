@@ -137,6 +137,7 @@ class Navigator:
                     self.follow_plant_aux(plant)
                 else:
                     self.remote_motor_controller.random_walk()
+                    time.sleep(5) # Giving robot enough time to escape from this plant
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
