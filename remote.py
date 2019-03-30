@@ -37,12 +37,22 @@ class Remote(object):
         self.id = id
         self.host = host
         self.callbacks = {}
+        self.ws = None
+        self.__queue = []
 
     @asyncio.coroutine
     def connect(self):
         log.info("[REMOTE] Connect {}".format(self.id))
         self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
-        log.info("WebSockets connection established on {}".format(self.host+"/stream/"+self.id))
+        log.info("WebSockets connection established on {}, {} queued messages".format(self.host+"/stream/"+self.id, len(self.__queue)))
+
+        # Fire messages in the queue
+        for data in self.__queue:
+            self.ws.send(data)
+
+        # Delete the queue
+        self.__queue = None
+
         while True:
             message = yield from self.ws.recv()
             result = json.loads(message)
@@ -54,6 +64,14 @@ class Remote(object):
             else:
                 log.error("[REMOTE] Uncaught message for type {} with data {}".format(type, data))
 
+    def __send(self, data):
+        # The we haven't connected yet, queue messages
+        if self.ws is None:
+            self.__queue.append(data)
+            return
+
+        self.ws.send(data)
+
     def plant_capture_photo(self, plant_id: int, image):
         body = {
             'type': "PLANT_CAPTURE_PHOTO",
@@ -63,8 +81,7 @@ class Remote(object):
             }
         }
 
-        if hasattr(self, "ws"):
-            self.ws.send(body)
+        self.__send(body)
 
     def create_log_entry(self, type, message, severity=LogSeverity.INFO,
                          plant_id=None):
@@ -82,8 +99,7 @@ class Remote(object):
             }
         }
 
-        if hasattr(self, "ws"):
-            self.ws.send(body)
+        self.__send(body)
 
     def update_soil_moisture(self, plant, moisture):
         body = {
@@ -94,8 +110,7 @@ class Remote(object):
             }
         }
 
-        if hasattr(self, "ws"):
-            self.ws.send(body)
+        self.__send(body)
 
     def close(self):
         if hasattr(self, "ws"):
