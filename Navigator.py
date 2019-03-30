@@ -66,6 +66,7 @@ class Navigator:
         self.frame_count = None
 
         self.remote_motor_controller = RemoteMotorController()
+        self.backing = False
 
         # Load angle approximation model.
         with open("k3_ng_model.pkl", "rb") as input_file:
@@ -132,6 +133,7 @@ class Navigator:
             else:
                 # Operating in normal mode.
                 self.robot_controller.on_plant_seen()
+                self.robot_controller.read_qr_code()
                 self.follow_plant_aux(plant)
         else:
             # Plant not detected. Perform random search if not searching already.
@@ -177,6 +179,7 @@ class Navigator:
         log.info("Following a plant...")
 
         if self.is_centered_plant(plant):
+            self.backing = False
             log.info("Plant found in the centre.")
             # Plant is centered.
             #self.remote_motor_controller.stop()
@@ -194,39 +197,43 @@ class Navigator:
                 self.remote_motor_controller.stop()
 
                 # Read the QR code and make a decision here
-                self.robot_controller.read_qr_code()
+                # self.robot_controller.read_qr_code()
                 # If this QR code is the same as the last QR code read, skip this plant to another plant
-                if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
-                    log.info("Plant is found and QR is read, continue")
+                # if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
+                    # log.info("Plant is found and QR is read, continue")
                     # Report to robot controller.
-                    self.robot_controller.on_plant_found()
+                self.robot_controller.on_plant_found()
 
-                    # Start another random walk.
-                    self.random_search_mode = True
-                    self.remote_motor_controller.random_walk()
+                # Start another random walk.
+                self.random_search_mode = True
+                self.remote_motor_controller.random_walk()
 
-                    # Disable escape mode after escape_delay seconds.
-                    threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
-                else:
-                    log.info("Plant found, but QR code is not readable or it is the last visited plant, do random walk now")
-                    self.remote_motor_controller.go_backward()
-                    time.sleep(3)
-                    self.remote_motor_controller.random_walk()
-                    time.sleep(5) # Giving robot enough time to escape from this plant
+                # Disable escape mode after escape_delay seconds.
+                threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
+                # else:
+                #     log.info("Plant found, but QR code is not readable or it is the last visited plant, do random walk now")
+                #     self.remote_motor_controller.go_backward()
+                #     time.sleep(3)
+                #     self.remote_motor_controller.random_walk()
+                #     time.sleep(5) # Giving robot enough time to escape from this plant
 
         else:
             # Plant isn't centered. Turn right/left.
             log.info("Plant not in the centre.")
 
             if self.is_plant_approached:
+                if self.backing:
+                    return
                 # If threshold value is reached, back off and try again?
                 self.remote_motor_controller.stop()
                 self.remote_motor_controller.go_backward()
                 time.sleep(3)
                 self.remote_motor_controller.stop()
+                self.backing = True
                 return
 
             # Approximate angle of rotation
+            self.backing = False
             area = self.get_bb_area(plant)
             mdelta = self.get_midpoint_delta(plant)
 
