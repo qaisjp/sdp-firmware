@@ -69,14 +69,17 @@ class RobotController:
 
     def read_qr_code(self):
         # Read the QR code
+        tries = 3
         qr_codes = self.qr_reader.identify(self.received_frame)
-        if len(qr_codes) == 0:
-            log.warning("No plant QR found.")
-            self.current_qr_approached = None
-        else:
-            for qr in qr_codes:
-                self.current_qr_approached = qr
-                log.info("Plant QR found: {}".format(qr))
+        while tries > 0:
+            if len(qr_codes) == 0:
+                log.warning("No plant QR found.")
+                self.current_qr_approached = None
+            else:
+                for qr in qr_codes:
+                    self.current_qr_approached = qr
+                    log.info("Plant QR found: {}".format(qr))
+                break
 
     def on_plant_found(self):
         # Take a picture here
