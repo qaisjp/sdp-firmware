@@ -37,7 +37,7 @@ class Navigator:
                                         next one
         :param verbose:                 Verbosity flag
         """
-        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s\033[0m", level=log.INFO, stream=sys.stdout)
 
         self.robot_controller = robot_controller
         self.obstacle_threshold = obstacle_threshold
@@ -107,7 +107,7 @@ class Navigator:
         """
 
         if not self.robot_controller.approach_complete:
-            log.info("Plant approached, skipping this frame")
+            log.info("\033[0;32m[change_state_on_new_frame] Plant approached, skipping this frame")
             return
 
         # Wait n frames until turn is complete
@@ -119,7 +119,7 @@ class Navigator:
         if self.escape_mode:
             if (time.time() - self.escape_mode_time) >= self.escape_delay:
                 self.escape_mode = False
-                log.info("Escape mode disabled.")
+                log.info("[change_state_on_new_frame] Escape mode disabled.")
 
         if self.prediction_dict["plants"]:
             # Plant detected.
@@ -142,7 +142,7 @@ class Navigator:
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
-                log.info("Performing random walk...")
+                log.info("\033[0;35m[change_state_on_new_frame] Performing random walk...")
                 self.random_search_mode = True
                 self.remote_motor_controller.random_walk()
 
@@ -180,22 +180,22 @@ class Navigator:
         :param plant:   Plant to be followed.
         :return:
         """
-        log.info("Following a plant...")
+        log.info("\033[0;33m[follow_plant] Following a plant...")
 
         if self.is_centered_plant(plant):
             self.backing = False
-            log.info("Plant found in the centre.")
+            log.info("\033[0;32m[follow_plant] Plant found in the centre.")
             # Plant is centered.
             #self.remote_motor_controller.stop()
 
             if not self.is_plant_approached(plant):
                 print(self.remote_motor_controller.front_sensor_value)
-                log.info("Moving forward...")
+                log.info("\033[0;32m[follow_plant] Moving forward...")
                 # Plant is not in front of the robot.
                 self.remote_motor_controller.go_forward()
             else:
                 # Plant is in front of the robot. Stop the robot and switch to escape mode.
-                log.info("Plant approached.")
+                log.info("\033[1;37;42m[follow_plant] Plant approached.")
                 self.enable_escape_mode()
                 self.follow_mode = False
                 self.remote_motor_controller.stop()
@@ -223,7 +223,7 @@ class Navigator:
 
         else:
             # Plant isn't centered. Turn right/left.
-            log.info("Plant not in the centre.")
+            log.info("\033[0;33m[follow_plant] Plant not in the centre.")
 
             if self.is_plant_approached:
                 if self.backing:
@@ -247,11 +247,11 @@ class Navigator:
 
             if self.get_bb_midpoint(plant) > self.frame_midpoint:
                 # Turn right
-                log.info("Turning right by {} degrees...".format(angle))
+                log.info("\033[0;33m[follow_plant] Turning right by {} degrees...".format(angle))
                 self.remote_motor_controller.turn_right(angle)
             else:
                 # Turn left.
-                log.info("Turning left by {} degrees...".format(angle))
+                log.info("\033[0;33m[follow_plant] Turning left by {} degrees...".format(angle))
                 self.remote_motor_controller.turn_left(angle)
 
             self.frame_count = 8
