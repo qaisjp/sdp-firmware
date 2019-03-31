@@ -198,18 +198,11 @@ class Navigator:
         """
         log.info("\033[0;33m[follow_plant] Following a plant...\033[0m")
 
-        if self.is_centered_plant(plant):
-            self.backing = False
-            log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
-            # Plant is centered.
-            #self.remote_motor_controller.stop()
+        if self.is_plant_approached(plant):
+            if self.is_centered_plant(plant):
+                self.backing = False
+                log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
 
-            if not self.is_plant_approached(plant):
-                print(self.remote_motor_controller.front_sensor_value)
-                log.info("\033[0;32m[follow_plant] Moving forward...\033[0m")
-                # Plant is not in front of the robot.
-                self.remote_motor_controller.go_forward()
-            else:
                 # Plant is in front of the robot. Stop the robot and switch to escape mode.
                 log.info("\033[1;37;42m[follow_plant] Plant approached.\033[0m")
                 self.enable_escape_mode()
@@ -230,48 +223,36 @@ class Navigator:
 
                 # Disable escape mode after escape_delay seconds.
                 threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
-                # else:
-                #     log.info("Plant found, but QR code is not readable or it is the last visited plant, do random walk now")
-                #     self.remote_motor_controller.go_backward()
-                #     time.sleep(3)
-                #     self.remote_motor_controller.random_walk()
-                #     time.sleep(5) # Giving robot enough time to escape from this plant
-
-        else:
-            # Plant isn't centered. Turn right/left.
-            log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
-
-            #if self.is_plant_approached:
-            #    if self.backing:
-            #        return
-                # If threshold value is reached, back off and try again?
-            #    self.remote_motor_controller.stop()
-            #    self.remote_motor_controller.go_backward()
-                # time.sleep(3)
-            #    self.remote_motor_controller.stop()
-            #    self.backing = True
-            #    return
-
-            # Approximate angle of rotation
-            #self.backing = False
-
-            area = self.get_bb_area(plant)
-            mdelta = self.get_midpoint_delta(plant)
-
-            log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
-
-            angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
-
-            if self.get_bb_midpoint(plant) > self.frame_midpoint:
-                # Turn right
-                log.info("\033[0;33m[follow_plant] Turning right by {} degrees...\033[0m".format(angle))
-                self.remote_motor_controller.turn_right(angle)
             else:
-                # Turn left.
-                log.info("\033[0;33m[follow_plant] Turning left by {} degrees...\033[0m".format(angle))
-                self.remote_motor_controller.turn_left(angle)
+                log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
+        else:
+            if self.is_centered_plant(plant):
+                self.backing = False
+                log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
 
-            self.frame_count = 10
+                print(self.remote_motor_controller.front_sensor_value)
+                log.info("\033[0;32m[follow_plant] Moving forward...\033[0m")
+                # Plant is not in front of the robot.
+                self.remote_motor_controller.go_forward()
+            else:
+                log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
+                area = self.get_bb_area(plant)
+                mdelta = self.get_midpoint_delta(plant)
+
+                log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
+
+                angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
+
+                if self.get_bb_midpoint(plant) > self.frame_midpoint:
+                    # Turn right
+                    log.info("\033[0;33m[follow_plant] Turning right by {} degrees...\033[0m".format(angle))
+                    self.remote_motor_controller.turn_right(angle)
+                else:
+                    # Turn left.
+                    log.info("\033[0;33m[follow_plant] Turning left by {} degrees...\033[0m".format(angle))
+                    self.remote_motor_controller.turn_left(angle)
+
+                self.frame_count = 10
 
     def disable_escape_mode_threaded(self):
         time.sleep(self.escape_delay)
