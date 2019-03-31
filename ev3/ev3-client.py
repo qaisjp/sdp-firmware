@@ -118,6 +118,7 @@ class EV3_Client:
                     log.info("[EV3 > Pi] Sending approach complete message, approach_problem={}.".format(str(self.approach_problem)))
                     yield from self.ws_sender.send(json.dumps(package))
                     self.approach_complete = False
+                    self.approach_problem = False
                 if self.retry_complete:
                     package = {
                             "type": "retry_complete",
@@ -159,7 +160,7 @@ class EV3_Client:
             self.turn_issued = False
 
         elif action == "retry_approach":
-            log.info("Retrying aproaching due to plant not centred.")
+            log.info("Retrying approaching due to plant not centred.")
             self.stop_now = True
             self.firmware.stop()
             self.turn_issued = True # Set this flag to true to ignore most messages

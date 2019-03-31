@@ -106,7 +106,7 @@ class GrowBot:
             self.right_motor.run_forever(speed_sp=int(running_speed))
         else:
             self.left_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
-            self.right_motor.run_forever(speed_sp=int(running_speed), time_sp=running_time * 1000)
+            self.right_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
             for _ in range(100):
                 time.sleep(running_time / 100)
 
