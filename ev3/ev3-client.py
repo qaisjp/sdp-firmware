@@ -24,6 +24,7 @@ class EV3_Client:
         self.approach_complete = False
         self.retry_complete = False
         self.approach_escape_complete = False
+        self.approach_problem = False
 
     def connect(self, sender=False):
         try:
@@ -110,7 +111,9 @@ class EV3_Client:
                             "type": "approach_complete",
                             "severity": 1
                     }
-                    log.info("[EV3 > Pi] Sending approach complete message.")
+                    if self.approach_problem:
+                        package["approach_problem"] = True
+                    log.info("[EV3 > Pi] Sending approach complete message, approach_problem={}.".format(str(self.approach_problem)))
                     yield from self.ws_sender.send(json.dumps(package))
                     self.approach_complete = False
                 if self.retry_complete:
@@ -402,6 +405,8 @@ class EV3_Client:
         if time.time() - approach_start > 10:
             log.info("Approach timeout, retreat.")
             self.retry_approach_routine()
+            self.approach_complete = True
+            self.approach_problem = True
             return
 
         self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)

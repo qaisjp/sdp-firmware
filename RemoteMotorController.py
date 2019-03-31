@@ -69,7 +69,11 @@ class RemoteMotorController:
             sys.exit(1)
         elif package["type"] == "approach_complete":
             log.error("[Pi < EV3] Approach completed.")
-            self.robot_controller.on_approach_complete()
+            if package["approach_problem"]:
+                self.robot_controller.approach_complete = True
+                self.robot_controller.retrying_approach = True
+            else:
+                self.robot_controller.on_approach_complete()
         elif package["type"] == "retry_complete":
             log.error("[Pi < EV3] Retry completed.")
             self.robot_controller.on_retry_complete()
