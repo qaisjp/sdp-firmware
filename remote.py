@@ -67,9 +67,11 @@ class Remote(object):
     def __send(self, data):
         # The we haven't connected yet, queue messages
         if self.ws is None:
+            log.info("[REMOTE] Queueing message {}".format(data))
             self.__queue.append(data)
             return
 
+        log.info("[REMOTE] Sending message {}".format(data))
         self.ws.send(data)
 
     def plant_capture_photo(self, plant_id: int, image):
