@@ -391,7 +391,7 @@ class EV3_Client:
         else:
             self.firmware.right_motor.stop()
         
-        while time.time() - retreat_time < 8:
+        while time.time() - retreat_time < 12:
             pass
 
         self.firmware.stop()
