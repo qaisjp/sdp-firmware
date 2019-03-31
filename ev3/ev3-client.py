@@ -381,16 +381,18 @@ class EV3_Client:
         self.firmware.raise_arm(running_rotations=5)
         time.sleep(5)
         self.firmware.lower_arm(running_rotations=5)
-        self.firmware.drive_backward(run_forever=False, running_time=5, running_speed=75)
-        
+
+        retreat_time = time.time()
+        self.firmware.drive_backward(run_forever=False, running_speed=75)
+        while time.time() - retreat_time < 5:
+            pass
         if random.random <= 0.5:
             self.firmware.left_motor.stop()
         else:
             self.firmware.right_motor.stop()
         
-        turn_start = time.time()
-        while time.time() - turn_start < 3:
-            print(time.time() - turn_start)
+        while time.time() - retreat_time < 8:
+            print(time.time() - retreat_time)
 
         self.firmware.stop()
 
