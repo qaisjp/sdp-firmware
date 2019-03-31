@@ -94,8 +94,12 @@ class RobotController:
 
     def on_approach_complete(self):
         # Take a picture here
-        if self.current_qr_approached.startswith("gbpl:"):
-            self.remote.plant_capture_photo(int(self.current_qr_approached[6:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]))
+
+        if self.current_qr_approached is not None:
+            if self.current_qr_approached.startswith("gbpl:"):
+                self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]))
+        else:
+            log.warning("[Pi] No QR code found during this approach, photo will not be sent.")
 
         self.last_qr_approached = self.current_qr_approached
         self.current_qr_approached = None
