@@ -150,7 +150,7 @@ class EV3_Client:
             self.firmware.stop()
             self.turn_issued = False
             self.random_issued = False
-    
+
         elif action == "approached":
             log.info("Plant approached, starting procedures.")
             self.stop_now = True
@@ -187,7 +187,7 @@ class EV3_Client:
             log.info("Message ignored due to self.turn_issued is True")
             log.info("Message content: {}".format(str(package)))
             return
-        
+
         elif action == "left":
             if package["turn_timed"]:
                 turn_time = int(package["turn_turnTime"])
@@ -271,7 +271,7 @@ class EV3_Client:
                 loop_start_time = time.time()
                 turn_time = random.randint(1, 10) # Length of turn, in seconds
                 log.info("Random turn, time={}".format(turn_time))
-                
+
                 stop_called = False
                 # Loop here, until either stop_now is triggered or requested time has elapsed
                 while time.time() - loop_start_time < turn_time:
@@ -334,7 +334,7 @@ class EV3_Client:
                 log.info("Random forward drive, time={}".format(move_time))
 
                 stop_called = False
-                
+
                 # Loop here, until either stop_now is triggered, sensor value is below threshold or requested time has elapsed
                 while time.time() - loop_start_time < move_time:
                     front_sensor_read = 10000
@@ -405,7 +405,7 @@ class EV3_Client:
                     self.firmware.drive_forward(running_speed=75)
             except ValueError:
                 continue
-        
+
         if time.time() - approach_start > 10:
             log.info("Approach timeout, retreat.")
             self.retry_approach_routine()
@@ -421,9 +421,9 @@ class EV3_Client:
         retreat_time = time.time()
         while time.time() - retreat_time < 10:
             self.firmware.drive_backward(run_forever=False, running_speed=75)
-        
+
         self.firmware.left_motor.stop()
-        
+
         self.approach_complete = True
 
     def retry_approach_routine(self):
@@ -444,7 +444,7 @@ class EV3_Client:
     def timed_turn(self, turn_time):
         turn_start_time = time.time()
         log.info("Timed turn, time={}".format(turn_time))
-                
+
         stop_called = False
         # Loop here, until either stop_now is triggered or requested time has elapsed
         while time.time() - turn_start_time < turn_time:
@@ -500,8 +500,8 @@ class EV3_Client:
 
         # Timer expired, stop the robot
         log.info("Finished turning, stopping.")
-        self.firmware.stop()        
-        
+        self.firmware.stop()
+
 def socket_sender_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
     client.connect(sender=True)
@@ -524,7 +524,7 @@ def socket_error_message_loop(msg):
             log.warn("Connection to port {} refused, trying again in 5 seconds.".format(19221))
             yield from asyncio.sleep(5)
             continue
-    
+
     try:
         error_package = {
                             "type": "error",
@@ -536,6 +536,7 @@ def socket_error_message_loop(msg):
         yield from ws.close()
         sys.exit(1)
 
+
 def main():
     log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     try:
@@ -543,12 +544,20 @@ def main():
 
         try:
             ws_receiver = asyncio.new_event_loop()
-            ws_receiver_thread = threading.Thread(target=socket_receiver_establish_loop, args=(ev3, ws_receiver,))
+            ws_receiver_thread = threading.Thread(
+                name="ws_receiver_thread",
+                target=socket_receiver_establish_loop,
+                args=(ev3, ws_receiver,),
+            )
             ws_receiver_thread.setDaemon(True)
             ws_receiver_thread.start()
 
             ws_sender = asyncio.new_event_loop()
-            ws_sender_thread = threading.Thread(target=socket_sender_establish_loop, args=(ev3, ws_sender,))
+            ws_sender_thread = threading.Thread(
+                name="ws_sender_thread",
+                target=socket_sender_establish_loop,
+                args=(ev3, ws_sender,),
+            )
             ws_sender_thread.setDaemon(True)
             ws_sender_thread.start()
 
