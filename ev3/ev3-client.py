@@ -367,7 +367,7 @@ class EV3_Client:
         while True:
             try:
                 front_sensor_read = self.firmware.front_sensor.value()
-                if front_sensor_read < 150 and front_sensor_read > 50:
+                if front_sensor_read < 100 and front_sensor_read > 50:
                     self.firmware.stop()
                     break
                 elif front_sensor_read < 50:
