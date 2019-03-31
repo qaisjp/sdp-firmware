@@ -105,6 +105,7 @@ class RobotController:
 
     def on_events_received(self, data):
         # self.sched.push_events(list(map(Event.from_dict, data)))
+        pass
 
 
 def main():
