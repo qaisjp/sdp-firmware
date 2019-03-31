@@ -87,10 +87,15 @@ class RobotController:
 
     def on_plant_found(self):
         # Send message to initiate approach command, until instructed to continue
-        self.approach_complete = False
-        self.navigator.remote_motor_controller.approached()
-        # while not self.navigator.remote_motor_controller.approach_complete:
-        #     pass
+        if self.current_qr_approached is None:
+            log.warning("No QR found, retrying approach")
+            self.retrying_approach = True
+            self.navigator.remote_motor_controller.retry_approach()
+        else:
+            # if past == current, do something here
+            self.approach_complete = False
+            self.navigator.remote_motor_controller.approached()
+            
 
     def on_approach_complete(self):
         # Take a picture here
