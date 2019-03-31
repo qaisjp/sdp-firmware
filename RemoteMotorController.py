@@ -70,6 +70,9 @@ class RemoteMotorController:
         elif package["type"] == "approach_complete":
             log.error("[Pi < EV3] Approach completed.")
             self.robot_controller.on_approach_complete()
+        elif package["type"] == "retry_complete":
+            log.error("[Pi < EV3] Retry completed.")
+            self.robot_controller.on_retry_complete()
         else:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False
@@ -81,6 +84,12 @@ class RemoteMotorController:
             "action": msg
         }
         return out
+
+    def retry_approach(self):
+        package = self.generate_action_package("retry_approach")
+        self.message = json.dumps(package)
+        self.robot_controller.retrying_approach = True
+        time.sleep(1)
 
     def turn_right(self, deg):
         # log.info("Turning right.")

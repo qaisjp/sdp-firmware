@@ -33,6 +33,7 @@ class RobotController:
         self.last_qr_approached = None
         self.current_qr_approached = None
         self.approach_complete = True
+        self.retrying_approach = False
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -95,8 +96,9 @@ class RobotController:
     def on_approach_complete(self):
         self.approach_complete = True
         self.last_qr_approached = self.current_qr_approached
-        self.navigator.remote_motor_controller.approach_complete = True
 
+    def on_retry_complete(self):
+        self.retrying_approach = False
 
     def on_plant_seen(self):
         pass

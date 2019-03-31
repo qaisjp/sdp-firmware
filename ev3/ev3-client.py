@@ -22,6 +22,7 @@ class EV3_Client:
         self.turn_issued = False
         self.random_issued = False
         self.approach_complete = False
+        self.retry_complete = True
 
     def connect(self, sender=False):
         try:
@@ -111,6 +112,14 @@ class EV3_Client:
                     log.info("[EV3 > Pi] Sending approach complete message.")
                     yield from self.ws_sender.send(json.dumps(package))
                     self.approach_complete = False
+                if self.retry_complete:
+                    package = {
+                            "type": "retry_complete",
+                            "severity": 1
+                    }
+                    log.info("[EV3 > Pi] Sending retry complete message.")
+                    yield from self.ws_sender.send(json.dumps(package))
+                    self.retry_complete = False
         finally:
             self.firmware.stop()
             self.ws_sender.close()
@@ -135,6 +144,15 @@ class EV3_Client:
             self.approached_routine() # Do approach routines
             self.turn_issued = False
             self.approach_complete = True
+
+        elif action == "retry_approach":
+            log.info("Retrying aproaching due to plant not centred.")
+            self.stop_now = True
+            self.firmware.stop()
+            self.turn_issued = True # Set this flag to true to ignore most messages
+            self.retry_approach_routine # Do retry
+            self.turn_issued = False
+            self.retry_complete = True
 
         elif self.turn_issued:
             # If a turn is currently in progress, skip the message
@@ -352,6 +370,20 @@ class EV3_Client:
         time.sleep(5)
         self.firmware.lower_arm()
         self.firmware.drive_backward(run_forever=False, running_time=3, running_speed=75)
+
+    def retry_approach_routine(self):
+        self.firmware.drive_backward()
+        backup_start = time.time()
+        backup_time = 10
+        while time.time() - backup_start < backup_time:
+            try:
+                back_sensor_read = self.firmware.back_sensor.value()
+                if back_sensor_read < self.firmware.sensor_obstacle_threshold * 10:
+                    break
+            except ValueError:
+                continue
+
+        self.firmware.stop()
 
     def timed_turn(self, turn_time):
         turn_start_time = time.time()

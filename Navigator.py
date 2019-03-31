@@ -112,6 +112,10 @@ class Navigator:
         if not self.robot_controller.approach_complete:
             log.info("\033[0;32m[change_state_on_new_frame] Plant approached, skipping this frame\033[0m")
             return
+        
+        if self.robot_controller.retrying_approach:
+            log.info("\033[0;33m[change_state_on_new_frame] Retrying approach, skipping this frame\033[0m")
+            return
 
         # Wait n frames until turn is complete
         if self.frame_count is not None:
@@ -225,6 +229,7 @@ class Navigator:
                 threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
             else:
                 log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
+                self.remote_motor_controller.retry_approach()
         else:
             if self.is_centered_plant(plant):
                 self.backing = False
