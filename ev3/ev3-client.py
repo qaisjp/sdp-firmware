@@ -367,10 +367,10 @@ class EV3_Client:
         while True:
             try:
                 front_sensor_read = self.firmware.front_sensor.value()
-                if front_sensor_read < 200 and front_sensor_read > 100:
+                if front_sensor_read < 150 and front_sensor_read > 50:
                     self.firmware.stop()
                     break
-                elif front_sensor_read < 100:
+                elif front_sensor_read < 50:
                     self.firmware.drive_backward(running_speed=75)
                 else:
                     self.firmware.drive_forward(running_speed=75)
@@ -390,7 +390,8 @@ class EV3_Client:
         
         turn_start = time.time()
         while time.time() - turn_start < 3:
-            pass
+            print(time.time() - turn_start)
+
         self.firmware.stop()
 
     def retry_approach_routine(self):
