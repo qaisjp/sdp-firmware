@@ -97,6 +97,7 @@ class RobotController:
         # Take a picture here
 
         self.last_qr_approached = self.current_qr_approached
+        self.navigator.remote_motor_controller.approach_escape()
 
     def on_approach_escape_complete(self):
         self.navigator.random_search_mode = True # Flip on the random search
