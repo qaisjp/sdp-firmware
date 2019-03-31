@@ -95,7 +95,7 @@ class RobotController:
 
     def on_approach_complete(self):
         # Take a picture here
-        self.remote.plant_capture_photo(self.current_qr_approached, base64.b64encode(cv2.imencode(".jpg", frame)[1]))
+        self.remote.plant_capture_photo(self.current_qr_approached, base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]))
 
         self.last_qr_approached = self.current_qr_approached
         self.navigator.remote_motor_controller.approach_escape()
