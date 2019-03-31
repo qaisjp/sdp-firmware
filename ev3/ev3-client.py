@@ -113,6 +113,8 @@ class EV3_Client:
                     }
                     if self.approach_problem:
                         package["approach_problem"] = True
+                    else:
+                        package["approach_problem"] = False
                     log.info("[EV3 > Pi] Sending approach complete message, approach_problem={}.".format(str(self.approach_problem)))
                     yield from self.ws_sender.send(json.dumps(package))
                     self.approach_complete = False
