@@ -206,6 +206,7 @@ class Navigator:
         :return:
         """
         log.info("\033[0;33m[follow_plant] Following a plant...\033[0m")
+        self.robot_controller.read_qr_code()
 
         if self.is_plant_approached(plant):
             if self.is_centered_plant(plant):
