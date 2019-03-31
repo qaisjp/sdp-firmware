@@ -78,7 +78,6 @@ class RobotController:
         while tries > 0:
             if len(qr_codes) == 0:
                 log.warning("No plant QR found.")
-                self.current_qr_approached = None
                 tries -= 1
             else:
                 for qr in qr_codes:
@@ -99,6 +98,7 @@ class RobotController:
             self.remote.plant_capture_photo(int(self.current_qr_approached[6:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]))
 
         self.last_qr_approached = self.current_qr_approached
+        self.current_qr_approached = None
         self.navigator.remote_motor_controller.approach_escape()
 
     def on_approach_escape_complete(self):
