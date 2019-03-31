@@ -76,8 +76,8 @@ class Remote(object):
         body = {
             'type': "PLANT_CAPTURE_PHOTO",
             'data': {
-                plant_id: plant_id,
-                image: image,  # Must be base64 encoded
+                'plant_id': plant_id,
+                'image': image,  # Must be base64 encoded
             }
         }
 
