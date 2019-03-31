@@ -26,7 +26,7 @@ class Navigator:
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.50,
                  escape_delay=5,
-                 constant_delta=10,
+                 constant_delta=7,
                  verbose=False):
         """
         Constructor for Navigator class.
@@ -54,6 +54,9 @@ class Navigator:
         self.escape_mode = False
         self.escape_mode_time = time.time()
 
+        self.random_search_timeout_counter = 8
+        self.plant_discovery_frame_count = 5
+
         # Frame details.
         self.frame_width = 640
         self.frame_height = 480
@@ -69,7 +72,7 @@ class Navigator:
         self.backing = False
 
         # Load angle approximation model.
-        with open("k3_ng_model.pkl", "rb") as input_file:
+        with open("k2_ng_model.pkl", "rb") as input_file:
             self.angle_model = pickle.load(input_file)
 
         # Establish two websocket connections to new background threads
@@ -111,8 +114,8 @@ class Navigator:
             return
 
         # Wait n frames until turn is complete
-        if self.frame_count != None:
-            if self.frame_count != 0:
+        if self.frame_count is not None:
+            if self.frame_count is not 0:
                 self.frame_count = self.frame_count - 1
                 return
 
@@ -123,6 +126,12 @@ class Navigator:
 
         if self.prediction_dict["plants"]:
             # Plant detected.
+
+            #if self.plant_discovery_frame_count is not 0:
+            #    self.plant_discovery_frame_count = self.plant_discovery_frame_count - 1
+            #    return
+            #else:
+            #    self.plant_discovery_frame_count = 5
 
             if self.prediction_dict["plants"]:
                 plant = next(iter(self.prediction_dict["plants"]))
@@ -142,9 +151,16 @@ class Navigator:
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
-                log.info("\033[0;35m[change_state_on_new_frame] Performing random walk...")
-                self.random_search_mode = True
-                self.remote_motor_controller.random_walk()
+                # TODO: get rid of hardcoded values.
+
+                if self.random_search_timeout_counter is not 0:
+                    self.random_search_timeout_counter = self.random_search_timeout_counter - 1
+                else:
+                    self.random_search_timeout_counter = 8
+
+                    log.info("\033[0;35m[change_state_on_new_frame] Performing random walk...")
+                    self.random_search_mode = True
+                    self.remote_motor_controller.random_walk()
 
     def follow_plant_aux(self, plant):
         """
@@ -225,25 +241,26 @@ class Navigator:
             # Plant isn't centered. Turn right/left.
             log.info("\033[0;33m[follow_plant] Plant not in the centre.")
 
-            if self.is_plant_approached:
-                if self.backing:
-                    return
+            #if self.is_plant_approached:
+            #    if self.backing:
+            #        return
                 # If threshold value is reached, back off and try again?
-                self.remote_motor_controller.stop()
-                self.remote_motor_controller.go_backward()
+            #    self.remote_motor_controller.stop()
+            #    self.remote_motor_controller.go_backward()
                 # time.sleep(3)
-                self.remote_motor_controller.stop()
-                self.backing = True
-                return
+            #    self.remote_motor_controller.stop()
+            #    self.backing = True
+            #    return
 
             # Approximate angle of rotation
-            self.backing = False
+            #self.backing = False
+
             area = self.get_bb_area(plant)
             mdelta = self.get_midpoint_delta(plant)
 
             log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
 
-            angle = self.angle_model.predict([[area, mdelta]])[0][0]
+            angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
 
             if self.get_bb_midpoint(plant) > self.frame_midpoint:
                 # Turn right
@@ -254,7 +271,7 @@ class Navigator:
                 log.info("\033[0;33m[follow_plant] Turning left by {} degrees...".format(angle))
                 self.remote_motor_controller.turn_left(angle)
 
-            self.frame_count = 8
+            self.frame_count = 10
 
     def disable_escape_mode_threaded(self):
         time.sleep(self.escape_delay)
@@ -273,7 +290,10 @@ class Navigator:
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
         # return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
-        return self.remote_motor_controller.front_sensor_value < 300
+        retval = self.remote_motor_controller.front_sensor_value < 300
+        log.info("Output of is_plant_approached(): {}".format(retval))
+
+        return retval
 
     def get_bb_area(self, prediction):
         """
