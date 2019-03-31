@@ -85,7 +85,10 @@ class RemoteMotorController:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False
         if valid_message:
-            self.remote.create_log_entry(LogType.UNKNOWN, package["type"], severity=LogSeverity(package["severity"]))
+            msg_send = ""
+            if "message" in package:
+                msg_send = package["message"]
+            self.remote.create_log_entry(LogType.UNKNOWN, package["type"] + ": " + msg_send, severity=LogSeverity(package["severity"]))
 
     def generate_action_package(self, msg):
         out = {
