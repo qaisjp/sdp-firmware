@@ -386,7 +386,7 @@ class EV3_Client:
         self.firmware.drive_backward(run_forever=False, running_speed=75)
         while time.time() - retreat_time < 5:
             pass
-        if random.random <= 0.5:
+        if random.random() <= 0.5:
             self.firmware.left_motor.stop()
         else:
             self.firmware.right_motor.stop()
