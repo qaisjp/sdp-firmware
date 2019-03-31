@@ -62,6 +62,8 @@ class Event():
         """Gets a list of trigger times before max_dt."""
 
         r = rrule.rrulestr(self.recurrences[0])
+        before = before.replace(tzinfo=None)
+        after = after.replace(tzinfo=None)
 
         return takewhile(lambda dt: dt.replace(tzinfo=None) < before,
                          filter(lambda dt: dt.replace(tzinfo=None) >= after, r))
