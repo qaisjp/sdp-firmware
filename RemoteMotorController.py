@@ -73,6 +73,9 @@ class RemoteMotorController:
         elif package["type"] == "retry_complete":
             log.error("[Pi < EV3] Retry completed.")
             self.robot_controller.on_retry_complete()
+        elif package["type"] == "approach_escape_complete":
+            log.error("[Pi < EV3] Retry completed.")
+            self.robot_controller.on_approach_escape_complete()
         else:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False
@@ -152,6 +155,11 @@ class RemoteMotorController:
     def approached(self):
         # log.info("Plant approached.")
         package = self.generate_action_package("approached")
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def approach_escape(self):
+        package = self.generate_action_package("approach_escape")
         self.message = json.dumps(package)
         time.sleep(1)
 

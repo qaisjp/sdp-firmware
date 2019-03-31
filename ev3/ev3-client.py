@@ -23,6 +23,7 @@ class EV3_Client:
         self.random_issued = False
         self.approach_complete = False
         self.retry_complete = False
+        self.approach_escape_complete = False
 
     def connect(self, sender=False):
         try:
@@ -120,6 +121,14 @@ class EV3_Client:
                     log.info("[EV3 > Pi] Sending retry complete message.")
                     yield from self.ws_sender.send(json.dumps(package))
                     self.retry_complete = False
+                if self.approach_escape_complete:
+                    package = {
+                            "type": "approach_escape_complete",
+                            "severity": 1
+                    }
+                    log.info("[EV3 > Pi] Sending approach escape complete message.")
+                    yield from self.ws_sender.send(json.dumps(package))
+                    self.approach_escape_complete = False
         finally:
             self.firmware.stop()
             self.ws_sender.close()
@@ -152,6 +161,20 @@ class EV3_Client:
             self.retry_approach_routine() # Do retry
             self.turn_issued = False
 
+        elif action == "approach_escape":
+            log.info("Turning around in spot to leave the current plant.")
+            self.stop_now = True
+            self.firmware.stop()
+            self.turn_issued = True # Set this flag to true to ignore most messages
+            turn_start = time.time()
+            while time.time() - turn_start < 7:
+                if random.random() <= 0.5:
+                    self.firmware.left_side_turn(twin_turn=True, running_speed=75)
+                else:
+                    self.firmware.right_side_turn(twin_turn=True, running_speed=75)
+            self.turn_issued = False
+            self.approach_escape_complete = True
+
         elif self.turn_issued:
             # If a turn is currently in progress, skip the message
             log.info("Message ignored due to self.turn_issued is True")
@@ -160,10 +183,10 @@ class EV3_Client:
         
         elif action == "left":
             if package["turn_timed"]:
-                time = int(package["turn_turnTime"])
+                turn_time = int(package["turn_turnTime"])
                 self.turn_issued = True
                 self.firmware.left_side_turn(run_forever=True, running_speed=75) # Turn forever
-                self.timed_turn(time)
+                self.timed_turn(turn_time)
                 self.turn_issued = False
             else:
                 angle = int(package["angle"])
@@ -180,7 +203,7 @@ class EV3_Client:
             self.stop_now = False
         elif action == "right":
             if package["turn_timed"]:
-                time = int(package["turn_turnTime"])
+                turn_time = int(package["turn_turnTime"])
                 self.turn_issued = True
                 self.firmware.right_side_turn(run_forever=True, running_speed=75) # Turn forever
                 self.timed_turn(time)
@@ -391,12 +414,7 @@ class EV3_Client:
             self.firmware.drive_backward(run_forever=False, running_speed=75)
         
         self.firmware.left_motor.stop()
-
-        while time.time() - retreat_time < 12:
-            pass
-
-        self.firmware.stop()
-
+        
         self.approach_complete = True
 
     def retry_approach_routine(self):

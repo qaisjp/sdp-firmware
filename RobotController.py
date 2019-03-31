@@ -94,10 +94,15 @@ class RobotController:
         #     pass
 
     def on_approach_complete(self):
-        self.approach_complete = True
+        # Take a picture here
+
         self.last_qr_approached = self.current_qr_approached
+
+    def on_approach_escape_complete(self):
         self.navigator.random_search_mode = True # Flip on the random search
         self.navigator.remote_motor_controller.random_walk()
+                
+        self.approach_complete = True
 
     def on_retry_complete(self):
         self.retrying_approach = False
