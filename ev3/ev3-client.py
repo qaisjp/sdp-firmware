@@ -367,7 +367,7 @@ class EV3_Client:
         while True:
             try:
                 front_sensor_read = self.firmware.front_sensor.value()
-                if front_sensor_read < 100 and front_sensor_read > 50:
+                if front_sensor_read < 75 and front_sensor_read > 50:
                     self.firmware.stop()
                     break
                 elif front_sensor_read < 50:
@@ -378,21 +378,21 @@ class EV3_Client:
                 continue
         
         self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
-        self.firmware.raise_arm(running_rotations=5)
+        self.firmware.raise_arm(running_rotations=4)
         time.sleep(5)
-        self.firmware.lower_arm(running_rotations=5)
+        self.firmware.lower_arm(running_rotations=4)
 
         retreat_time = time.time()
-        self.firmware.drive_backward(run_forever=False, running_speed=75)
         while time.time() - retreat_time < 5:
-            pass
+            self.firmware.drive_backward(run_forever=False, running_speed=75)
+
         if random.random() <= 0.5:
             self.firmware.left_motor.stop()
         else:
             self.firmware.right_motor.stop()
         
         while time.time() - retreat_time < 8:
-            print(time.time() - retreat_time)
+            pass
 
         self.firmware.stop()
 
