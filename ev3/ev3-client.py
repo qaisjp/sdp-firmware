@@ -364,12 +364,34 @@ class EV3_Client:
 
     # Invoked when the plant is reached - turn, extend arms, etc.
     def approached_routine(self):
-        self.firmware.drive_forward(run_forever=False, running_time=1, running_speed=75)
+        while True:
+            try:
+                front_sensor_read = self.firmware.front_sensor.value()
+                if front_sensor_read < 200 and front_sensor_read > 100:
+                    self.firmware.stop()
+                    break
+                elif front_sensor_read < 100:
+                    self.firmware.drive_backward(running_speed=75)
+                else:
+                    self.firmware.drive_forward(running_speed=75)
+            except ValueError:
+                continue
+        
         self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
-        self.firmware.raise_arm()
+        self.firmware.raise_arm(running_rotations=5)
         time.sleep(5)
-        self.firmware.lower_arm()
-        self.firmware.drive_backward(run_forever=False, running_time=3, running_speed=75)
+        self.firmware.lower_arm(running_rotations=5)
+        self.firmware.drive_backward(run_forever=False, running_time=5, running_speed=75)
+        
+        if random.random <= 0.5:
+            self.firmware.left_motor.stop()
+        else:
+            self.firmware.right_motor.stop()
+        
+        turn_start = time.time()
+        while time.time() - turn_start < 3:
+            pass
+        self.firmware.stop()
 
     def retry_approach_routine(self):
         self.firmware.drive_backward(running_speed=100)
