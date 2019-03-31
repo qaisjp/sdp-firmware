@@ -143,7 +143,6 @@ class EV3_Client:
             self.turn_issued = True # Set this flag to true to ignore most messages
             self.approached_routine() # Do approach routines
             self.turn_issued = False
-            self.approach_complete = True
 
         elif action == "retry_approach":
             log.info("Retrying aproaching due to plant not centred.")
@@ -152,7 +151,6 @@ class EV3_Client:
             self.turn_issued = True # Set this flag to true to ignore most messages
             self.retry_approach_routine() # Do retry
             self.turn_issued = False
-            self.retry_complete = True
 
         elif self.turn_issued:
             # If a turn is currently in progress, skip the message
@@ -364,7 +362,8 @@ class EV3_Client:
 
     # Invoked when the plant is reached - turn, extend arms, etc.
     def approached_routine(self):
-        while True:
+        approach_start = time.time()
+        while time.time() - approach_start < 10:
             try:
                 front_sensor_read = self.firmware.front_sensor.value()
                 if front_sensor_read < 75 and front_sensor_read > 50:
@@ -377,6 +376,11 @@ class EV3_Client:
             except ValueError:
                 continue
         
+        if time.time() - approach_start > 10:
+            log.info("Approach timeout, retreat.")
+            self.retry_approach_routine()
+            return
+
         self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
         self.firmware.raise_arm(running_rotations=4)
         time.sleep(5)
@@ -396,6 +400,8 @@ class EV3_Client:
 
         self.firmware.stop()
 
+        self.approach_complete = True
+
     def retry_approach_routine(self):
         self.firmware.drive_backward(running_speed=100)
         backup_start = time.time()
@@ -409,6 +415,7 @@ class EV3_Client:
                 continue
 
         self.firmware.stop()
+        self.retry_complete = True
 
     def timed_turn(self, turn_time):
         turn_start_time = time.time()
