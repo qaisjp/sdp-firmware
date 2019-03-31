@@ -22,7 +22,7 @@ class EV3_Client:
         self.turn_issued = False
         self.random_issued = False
         self.approach_complete = False
-        self.retry_complete = True
+        self.retry_complete = False
 
     def connect(self, sender=False):
         try:
