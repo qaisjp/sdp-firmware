@@ -5,6 +5,7 @@ import time
 import websockets
 import asyncio
 import json
+import config
 from remote import Remote, LogSeverity, LogType
 
 
@@ -18,7 +19,7 @@ class RemoteMotorController:
         self.message = None
         self.front_sensor_value = None
         self.back_sensor_value = None
-        self.remote = Remote("solskjaer")
+        self.remote = Remote(config.UUID)
         self.ev3_turning_constant = None
 
     def connect(self, port_nr=8866, sender=True):
