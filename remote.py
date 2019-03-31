@@ -32,7 +32,7 @@ class LogSeverity(Enum):
 
 
 class Remote(object):
-    def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
+    def __init__(self, id, host="wss://api.growbot.tardis.ed.ac.uk"):
         log.info("[REMOTE] Init {}".format(id))
         self.id = id
         self.host = host
@@ -44,11 +44,14 @@ class Remote(object):
     def connect(self):
         log.info("[REMOTE] Connect {}".format(self.id))
         self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
-        log.info("WebSockets connection established on {}, {} queued messages".format(self.host+"/stream/"+self.id, len(self.__queue)))
+        log.info("[REMOTE] Connection established on {}, {} queued messages".format(self.host+"/stream/"+self.id, len(self.__queue)))
 
         # Fire messages in the queue
         for data in self.__queue:
-            self.ws.send(data)
+            log.info("[REMOTE] Firing queued message {}".format(data))
+            self.__send(data)
+
+        log.info("[REMOTE] Done queue stuff")
 
         # Delete the queue
         self.__queue = None
@@ -72,7 +75,7 @@ class Remote(object):
             return
 
         log.info("[REMOTE] Sending message {}".format(data))
-        self.ws.send(data)
+        asyncio.ensure_future(self.ws.send(json.dumps(data)))
 
     def plant_capture_photo(self, plant_id: int, image):
         body = {
