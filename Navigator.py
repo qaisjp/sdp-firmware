@@ -25,8 +25,8 @@ class Navigator:
                  robot_controller,
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.50,
-                 escape_delay=5,
-                 constant_delta=7,
+                 escape_delay=15,
+                 constant_delta=8,
                  verbose=False):
         """
         Constructor for Navigator class.
@@ -112,7 +112,7 @@ class Navigator:
         if not self.robot_controller.approach_complete:
             log.info("\033[0;32m[change_state_on_new_frame] Plant approached, skipping this frame\033[0m")
             return
-        
+
         if self.robot_controller.retrying_approach:
             log.info("\033[0;33m[change_state_on_new_frame] Retrying approach, skipping this frame\033[0m")
             return
@@ -250,7 +250,7 @@ class Navigator:
                 area = self.get_bb_area(plant)
                 mdelta = self.get_midpoint_delta(plant)
 
-                log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
+                #log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
 
                 angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
 
@@ -283,7 +283,7 @@ class Navigator:
         """
         # return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
         retval = self.remote_motor_controller.front_sensor_value < 300
-        log.info("Output of is_plant_approached(): {}".format(retval))
+        #log.info("Output of is_plant_approached(): {}".format(retval))
 
         return retval
 
@@ -312,7 +312,7 @@ class Navigator:
 
         flag = left <= bb_midpoint <= right
 
-        log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
+        #log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
 
         return flag
 
