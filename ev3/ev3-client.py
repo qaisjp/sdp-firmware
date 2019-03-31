@@ -150,7 +150,7 @@ class EV3_Client:
             self.stop_now = True
             self.firmware.stop()
             self.turn_issued = True # Set this flag to true to ignore most messages
-            self.retry_approach_routine # Do retry
+            self.retry_approach_routine() # Do retry
             self.turn_issued = False
             self.retry_complete = True
 
@@ -372,7 +372,7 @@ class EV3_Client:
         self.firmware.drive_backward(run_forever=False, running_time=3, running_speed=75)
 
     def retry_approach_routine(self):
-        self.firmware.drive_backward()
+        self.firmware.drive_backward(running_speed=100)
         backup_start = time.time()
         backup_time = 10
         while time.time() - backup_start < backup_time:
