@@ -27,7 +27,6 @@ class RobotController:
                         confidence_interval=0.5)
 
         self.navigator = Navigator(self, verbose=True)
-        self.sched = Scheduler()
         self.received_frame = None
         self.qr_reader = QRReader()
         self.last_qr_approached = None
@@ -57,6 +56,7 @@ class RobotController:
     def thread_remote(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        self.sched = Scheduler()
         loop.run_until_complete(self.remote.connect())
 
     def process_visual_data(self, predictions, frame):
