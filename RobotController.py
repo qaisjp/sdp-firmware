@@ -85,8 +85,6 @@ class RobotController:
                 break
 
     def on_plant_found(self):
-        # Take a picture here
-        # Approach again?
         # Send message to initiate approach command, until instructed to continue
         self.approach_complete = False
         self.navigator.remote_motor_controller.approached()

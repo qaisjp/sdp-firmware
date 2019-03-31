@@ -173,11 +173,12 @@ class EV3_Client:
             self.firmware.stop()
             self.turn_issued = True # Set this flag to true to ignore most messages
             turn_start = time.time()
+            if random.random() <= 0.5:
+                self.firmware.left_side_turn(twin_turn=True, running_speed=75)
+            else:
+                self.firmware.right_side_turn(twin_turn=True, running_speed=75)
             while time.time() - turn_start < 7:
-                if random.random() <= 0.5:
-                    self.firmware.left_side_turn(twin_turn=True, running_speed=75)
-                else:
-                    self.firmware.right_side_turn(twin_turn=True, running_speed=75)
+                pass
             self.turn_issued = False
             self.approach_escape_complete = True
 
@@ -418,7 +419,7 @@ class EV3_Client:
         self.firmware.lower_arm(running_rotations=4)
 
         retreat_time = time.time()
-        while time.time() - retreat_time < 5:
+        while time.time() - retreat_time < 10:
             self.firmware.drive_backward(run_forever=False, running_speed=75)
         
         self.firmware.left_motor.stop()
