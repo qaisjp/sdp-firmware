@@ -43,7 +43,7 @@ class Remote(object):
     @asyncio.coroutine
     def connect(self):
         log.info("[REMOTE] Connect {}".format(self.id))
-        self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
+        self.ws = yield from websockets.connect(self.host+"/stream/"+self.id, write_limit=2**17)
         log.info("[REMOTE] Connection established on {}, {} queued messages".format(self.host+"/stream/"+self.id, len(self.__queue)))
 
         # Fire messages in the queue
