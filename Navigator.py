@@ -119,6 +119,7 @@ class Navigator:
 
         if self.remote_motor_controller.front_sensor_value is None or self.remote_motor_controller.back_sensor_value is None:
             log.info("\033[0;31m[change_state_on_new_frame] Sensor values contain none, skipping\033[0m")
+            return
             # Send stop?
 
         # Wait n frames until turn is complete
