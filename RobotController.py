@@ -49,14 +49,14 @@ class RobotController:
 
             rm_thread = threading.Thread(target=self.thread_remote, daemon=True)
             rm_thread.start()
-            rm_thread.join()
+            # rm_thread.join()
 
         threading.Thread(target=self.vision.start).start()
 
     def thread_remote(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        # self.sched = Scheduler()
+        self.sched = Scheduler()
         loop.run_until_complete(self.remote.connect())
 
     def process_visual_data(self, predictions, frame):
@@ -104,7 +104,7 @@ class RobotController:
         pass
 
     def on_events_received(self, data):
-        # self.sched.push_events(list(map(Event.from_dict, data)))
+        self.sched.push_events(list(map(Event.from_dict, data)))
         pass
 
 
