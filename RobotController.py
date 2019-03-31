@@ -28,7 +28,6 @@ class RobotController:
                         live_stream=False,
                         confidence_interval=0.5)
 
-        self.navigator = Navigator(self, verbose=True)
         self.received_frame = None
         self.qr_reader = QRReader()
         self.last_qr_approached = None
@@ -45,15 +44,22 @@ class RobotController:
 
             self.remote = Remote(config.UUID, host)
             self.remote.add_callback(
-                RPCType.MOVE_IN_DIRECTION, self.navigator.remote_move)
+                RPCType.MOVE_IN_DIRECTION, self.remote_move)
             self.remote.add_callback(
                 RPCType.EVENTS, self.on_events_received)
 
-            rm_thread = threading.Thread(target=self.thread_remote, daemon=True)
+            rm_thread = threading.Thread(target=self.thread_remote,
+                                         daemon=True)
             rm_thread.start()
             # rm_thread.join()
 
+        # Create the navigation system
+        self.navigator = Navigator(self, verbose=True)
+
         threading.Thread(target=self.vision.start).start()
+
+    def remote_move(self, direction):
+        self.navigator.remote_move(direction)
 
     def thread_remote(self):
         loop = asyncio.new_event_loop()
@@ -95,7 +101,6 @@ class RobotController:
             # if past == current, do something here
             self.approach_complete = False
             self.navigator.remote_motor_controller.approached()
-            
 
     def on_approach_complete(self):
         # Take a picture here
@@ -113,7 +118,7 @@ class RobotController:
     def on_approach_escape_complete(self):
         self.navigator.random_search_mode = True # Flip on the random search
         self.navigator.remote_motor_controller.random_walk()
-                
+
         self.approach_complete = True
 
     def on_retry_complete(self):
