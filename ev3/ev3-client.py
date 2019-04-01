@@ -509,12 +509,10 @@ class EV3_Client:
 def socket_sender_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
     client.connect(sender=True)
-    loop.run_forever()
 
 def socket_receiver_establish_loop(client, loop):
     asyncio.set_event_loop(loop)
     client.connect(sender=False)
-    loop.run_forever()
 
 @asyncio.coroutine
 def socket_error_message_loop(msg):
