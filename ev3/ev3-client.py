@@ -422,7 +422,6 @@ class EV3_Client:
         self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
         time.sleep(5)
 
-        retreat_time = time.time()
         self.firmware.drive_backward(run_forever=False, running_speed=75, running_time=10)
 
         self.firmware.lower_arm()
