@@ -27,7 +27,7 @@ class GrowBot:
         self.front_sensor = ev3.UltrasonicSensor('in1')
         self.back_sensor = ev3.UltrasonicSensor('in2')
 
-        self.arm_rotation_count = 5 # Number of rotation for the motor to perform to raise/lower the arm
+        self.arm_rotation_count = 4 # Number of rotation for the motor to perform to raise/lower the arm
         self.motor_running_speed = 500 # Default running speed to both mobilisation motors
         self.motor_running_time = 1 # Default running time for both mobilisation motors, in seconds
         self.turning_constant = 61 # Constant used for turning around
