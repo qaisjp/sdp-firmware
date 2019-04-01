@@ -396,6 +396,7 @@ class EV3_Client:
 
     # Invoked when the plant is reached - turn, extend arms, etc.
     def approached_routine(self):
+        self.firmware.raise_arm()
         approach_start = time.time()
         while time.time() - approach_start < 10:
             try:
@@ -412,22 +413,19 @@ class EV3_Client:
 
         if time.time() - approach_start > 10:
             log.info("Approach timeout, retreat.")
+            self.firmware.lower_arm()
             self.retry_approach_routine()
             self.approach_complete = True
             self.approach_problem = True
             return
 
         self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
-        self.firmware.raise_arm(running_rotations=4)
         time.sleep(5)
-        self.firmware.lower_arm(running_rotations=4)
 
         retreat_time = time.time()
-        while time.time() - retreat_time < 10:
-            self.firmware.drive_backward(run_forever=False, running_speed=75)
+        self.firmware.drive_backward(run_forever=False, running_speed=75, running_time=10)
 
-        self.firmware.left_motor.stop()
-
+        self.firmware.lower_arm()
         self.approach_complete = True
 
     def retry_approach_routine(self):
