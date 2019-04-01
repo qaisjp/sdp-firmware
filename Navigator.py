@@ -25,8 +25,8 @@ class Navigator:
                  robot_controller,
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.50,
-                 escape_delay=5,
-                 constant_delta=10,
+                 escape_delay=15,
+                 constant_delta=8,
                  verbose=False):
         """
         Constructor for Navigator class.
@@ -54,6 +54,9 @@ class Navigator:
         self.escape_mode = False
         self.escape_mode_time = time.time()
 
+        self.random_search_timeout_counter = 8
+        self.plant_discovery_frame_count = 5
+
         # Frame details.
         self.frame_width = 640
         self.frame_height = 480
@@ -65,10 +68,11 @@ class Navigator:
 
         self.frame_count = None
 
-        self.remote_motor_controller = RemoteMotorController()
+        self.remote_motor_controller = RemoteMotorController(self.robot_controller)
+        self.backing = False
 
         # Load angle approximation model.
-        with open("k3_ng_model.pkl", "rb") as input_file:
+        with open("k2_ng_model.pkl", "rb") as input_file:
             self.angle_model = pickle.load(input_file)
 
         # Establish two websocket connections to new background threads
@@ -105,19 +109,38 @@ class Navigator:
         :return:
         """
 
+        if not self.robot_controller.approach_complete:
+            log.info("\033[0;32m[change_state_on_new_frame] Plant approached, skipping this frame\033[0m")
+            return
+
+        if self.robot_controller.retrying_approach:
+            log.info("\033[0;33m[change_state_on_new_frame] Retrying approach, skipping this frame\033[0m")
+            return
+
+        if self.remote_motor_controller.front_sensor_value is None or self.remote_motor_controller.back_sensor_value is None:
+            log.info("\033[0;31m[change_state_on_new_frame] Sensor values contain none, skipping\033[0m")
+            return
+            # Send stop?
+
         # Wait n frames until turn is complete
-        if self.frame_count != None:
-            if self.frame_count != 0:
+        if self.frame_count is not None:
+            if self.frame_count is not 0:
                 self.frame_count = self.frame_count - 1
                 return
 
         if self.escape_mode:
             if (time.time() - self.escape_mode_time) >= self.escape_delay:
                 self.escape_mode = False
-                log.info("Escape mode disabled.")
+                log.info("[change_state_on_new_frame] Escape mode disabled.")
 
         if self.prediction_dict["plants"]:
             # Plant detected.
+
+            #if self.plant_discovery_frame_count is not 0:
+            #    self.plant_discovery_frame_count = self.plant_discovery_frame_count - 1
+            #    return
+            #else:
+            #    self.plant_discovery_frame_count = 5
 
             if self.prediction_dict["plants"]:
                 plant = next(iter(self.prediction_dict["plants"]))
@@ -132,13 +155,21 @@ class Navigator:
             else:
                 # Operating in normal mode.
                 self.robot_controller.on_plant_seen()
+                self.robot_controller.read_qr_code()
                 self.follow_plant_aux(plant)
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
-                log.info("Performing random walk...")
-                self.random_search_mode = True
-                self.remote_motor_controller.random_walk()
+                # TODO: get rid of hardcoded values.
+
+                if self.random_search_timeout_counter is not 0:
+                    self.random_search_timeout_counter = self.random_search_timeout_counter - 1
+                else:
+                    self.random_search_timeout_counter = 8
+
+                    log.info("\033[0;35m[change_state_on_new_frame] Performing random walk...\033[0m")
+                    self.random_search_mode = True
+                    self.remote_motor_controller.random_walk()
 
     def follow_plant_aux(self, plant):
         """
@@ -174,25 +205,26 @@ class Navigator:
         :param plant:   Plant to be followed.
         :return:
         """
-        log.info("Following a plant...")
+        log.info("\033[0;33m[follow_plant] Following a plant...\033[0m")
+        self.robot_controller.read_qr_code()
 
-        if self.is_centered_plant(plant):
-            log.info("Plant found in the centre.")
-            # Plant is centered.
-            #self.remote_motor_controller.stop()
+        if self.is_plant_approached(plant):
+            if self.is_centered_plant(plant):
+                self.backing = False
+                log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
 
-            if not self.is_plant_approached(plant):
-                log.info("Moving forward...")
-                # Plant is not in front of the robot.
-                self.remote_motor_controller.go_forward()
-            else:
                 # Plant is in front of the robot. Stop the robot and switch to escape mode.
-                log.info("Plant approached.")
+                log.info("\033[1;37;42m[follow_plant] Plant approached.\033[0m")
                 self.enable_escape_mode()
                 self.follow_mode = False
                 self.remote_motor_controller.stop()
 
-                # Report to robot controller.
+                # Read the QR code and make a decision here
+                # self.robot_controller.read_qr_code()
+                # If this QR code is the same as the last QR code read, skip this plant to another plant
+                # if self.robot_controller.last_qr_approached != self.robot_controller.current_qr_approached and self.robot_controller.current_qr_approached is not None:
+                    # log.info("Plant is found and QR is read, continue")
+                    # Report to robot controller.
                 self.robot_controller.on_plant_found()
 
                 # Start another random walk.
@@ -201,28 +233,37 @@ class Navigator:
 
                 # Disable escape mode after escape_delay seconds.
                 threading.Thread(target=self.disable_escape_mode_threaded, daemon=True).start()
-        else:
-            # Plant isn't centered. Turn right/left.
-            log.info("Plant not in the centre.")
-
-            # Approximate angle of rotation
-            area = self.get_bb_area(plant)
-            mdelta = self.get_midpoint_delta(plant)
-
-            log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
-
-            angle = self.angle_model.predict([[area, mdelta]])[0][0]
-
-            if self.get_bb_midpoint(plant) > self.frame_midpoint:
-                # Turn right
-                log.info("Turning right by {} degrees...".format(angle))
-                self.remote_motor_controller.turn_right(angle)
             else:
-                # Turn left.
-                log.info("Turning left by {} degrees...".format(angle))
-                self.remote_motor_controller.turn_left(angle)
+                log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
+                self.remote_motor_controller.retry_approach()
+        else:
+            if self.is_centered_plant(plant):
+                self.backing = False
+                log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
 
-            self.frame_count = 8
+                print(self.remote_motor_controller.front_sensor_value)
+                log.info("\033[0;32m[follow_plant] Moving forward...\033[0m")
+                # Plant is not in front of the robot.
+                self.remote_motor_controller.go_forward()
+            else:
+                log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
+                area = self.get_bb_area(plant)
+                mdelta = self.get_midpoint_delta(plant)
+
+                #log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
+
+                angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
+
+                if self.get_bb_midpoint(plant) > self.frame_midpoint:
+                    # Turn right
+                    log.info("\033[0;33m[follow_plant] Turning right by {} degrees...\033[0m".format(angle))
+                    self.remote_motor_controller.turn_right(angle)
+                else:
+                    # Turn left.
+                    log.info("\033[0;33m[follow_plant] Turning left by {} degrees...\033[0m".format(angle))
+                    self.remote_motor_controller.turn_left(angle)
+
+                self.frame_count = 10
 
     def disable_escape_mode_threaded(self):
         time.sleep(self.escape_delay)
@@ -241,7 +282,10 @@ class Navigator:
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
         # return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
-        return self.remote_motor_controller.front_sensor_value < 400
+        retval = self.remote_motor_controller.front_sensor_value < 300
+        #log.info("Output of is_plant_approached(): {}".format(retval))
+
+        return retval
 
     def get_bb_area(self, prediction):
         """
@@ -268,7 +312,7 @@ class Navigator:
 
         flag = left <= bb_midpoint <= right
 
-        log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
+        #log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
 
         return flag
 

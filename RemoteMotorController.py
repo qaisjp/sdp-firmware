@@ -5,21 +5,22 @@ import time
 import websockets
 import asyncio
 import json
+import config
 from remote import Remote, LogSeverity, LogType
 
 
 class RemoteMotorController:
-    def __init__(self, address="localhost"):
+    def __init__(self, robot_controller, address="localhost"):
         log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        self.robot_controller = robot_controller
         self.address_nr = address
         self.ws_receiver = None
         self.ws_sender = None
         self.message = None
         self.front_sensor_value = None
         self.back_sensor_value = None
-        self.remote = Remote("solskjaer")
+        self.remote = self.robot_controller.remote
         self.ev3_turning_constant = None
-        self.approach_complete = False
 
     def connect(self, port_nr=8866, sender=True):
         if sender:
@@ -57,8 +58,8 @@ class RemoteMotorController:
         valid_message = True
         if package["type"] == "sensor":
             log.info("[Pi < EV3] front_sensor: {}, back_sensor: {}".format(package["front_sensor"], package["back_sensor"]))
-            self.front_sensor_value = package["front_sensor"]
-            self.back_sensor_value = package["back_sensor"]
+            self.front_sensor_value = int(package["front_sensor"])
+            self.back_sensor_value = int(package["back_sensor"])
         elif package["type"] == "init":
             log.info("[Pi < EV3] Received init messages: {}".format(str(package)))
             self.ev3_turning_constant = package["turning_constant"]
@@ -69,18 +70,38 @@ class RemoteMotorController:
             sys.exit(1)
         elif package["type"] == "approach_complete":
             log.error("[Pi < EV3] Approach completed.")
-            self.approach_complete = True
+            if package["approach_problem"]:
+                self.robot_controller.approach_complete = True
+                self.robot_controller.retrying_approach = True
+            else:
+                self.robot_controller.on_approach_complete()
+        elif package["type"] == "retry_complete":
+            log.error("[Pi < EV3] Retry completed.")
+            self.robot_controller.on_retry_complete()
+        elif package["type"] == "approach_escape_complete":
+            log.error("[Pi < EV3] Retry completed.")
+            self.robot_controller.on_approach_escape_complete()
         else:
             log.warning("[Pi < EV3] Message received not recognisable")
             valid_message = False
         if valid_message:
-            self.remote.create_log_entry(LogType.UNKNOWN, package["type"], severity=LogSeverity(package["severity"]))
+            msg_send = ""
+            if "message" in package:
+                msg_send = package["message"]
+            if package["type"] != "sensor":
+                self.remote.create_log_entry(LogType.UNKNOWN, package["type"] + ": " + msg_send, severity=LogSeverity(package["severity"]))
 
     def generate_action_package(self, msg):
         out = {
             "action": msg
         }
         return out
+
+    def retry_approach(self):
+        package = self.generate_action_package("retry_approach")
+        self.message = json.dumps(package)
+        self.robot_controller.retrying_approach = True
+        time.sleep(1)
 
     def turn_right(self, deg):
         # log.info("Turning right.")
@@ -114,15 +135,17 @@ class RemoteMotorController:
         self.message = json.dumps(package)
         time.sleep(1)
 
-    def go_forward(self):
+    def go_forward(self, forward_time=-1):
         # log.info("Going forward.")
         package = self.generate_action_package("forward")
+        package["time"] = forward_time
         self.message = json.dumps(package)
         time.sleep(1)
 
-    def go_backward(self):
+    def go_backward(self, backup_time=-1):
         # log.info("Going backward.")
         package = self.generate_action_package("backward")
+        package["time"] = backup_time
         self.message = json.dumps(package)
         time.sleep(1)
 
@@ -141,6 +164,11 @@ class RemoteMotorController:
     def approached(self):
         # log.info("Plant approached.")
         package = self.generate_action_package("approached")
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def approach_escape(self):
+        package = self.generate_action_package("approach_escape")
         self.message = json.dumps(package)
         time.sleep(1)
 

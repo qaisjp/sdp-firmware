@@ -3,6 +3,7 @@ import websockets
 import json
 import asyncio
 import logging as log
+import threading
 
 
 class UnhandledRPCTranslationException(Exception):
@@ -31,17 +32,39 @@ class LogSeverity(Enum):
     DANGER = 3
 
 
+@asyncio.coroutine
+def ws_send(ws, i, data):
+    print("start {}".format(i))
+    yield from ws.send(json.dumps(data))
+    print("end {}".format(i))
+
+
 class Remote(object):
-    def __init__(self, id, host="ws://api.growbot.tardis.ed.ac.uk"):
+    def __init__(self, id, host="wss://api.growbot.tardis.ed.ac.uk"):
         log.info("[REMOTE] Init {}".format(id))
         self.id = id
         self.host = host
         self.callbacks = {}
+        self.ws = None
+        self.ws_i = 0
+        self.__queue = []
 
     @asyncio.coroutine
     def connect(self):
         log.info("[REMOTE] Connect {}".format(self.id))
-        self.ws = yield from websockets.connect(self.host+"/stream/"+self.id)
+        self.ws = yield from websockets.connect(self.host+"/stream/"+self.id, write_limit=2**18)
+        log.info("[REMOTE] Connection established on {}, {} queued messages".format(self.host+"/stream/"+self.id, len(self.__queue)))
+
+        # Fire messages in the queue
+        for data in self.__queue:
+            log.info("[REMOTE] Firing queued message {}".format(data))
+            self.__send(data)
+
+        log.info("[REMOTE] Done queue stuff")
+
+        # Delete the queue
+        self.__queue = None
+
         while True:
             message = yield from self.ws.recv()
             result = json.loads(message)
@@ -53,16 +76,32 @@ class Remote(object):
             else:
                 log.error("[REMOTE] Uncaught message for type {} with data {}".format(type, data))
 
+    def __send(self, data, friendly=True):
+        # The we haven't connected yet, queue messages
+        if self.ws is None:
+            log.info("[REMOTE] Queueing message {}".format(data))
+            self.__queue.append(data)
+            return
+
+        friendly_data = {"type": data["type"]}
+        if friendly:
+            friendly_data["data"] = data["data"]
+
+        thname = threading.current_thread().name
+        log.info("[REMOTE] [Thread:{}] Sending message {}".format(thname, friendly_data))
+        asyncio.ensure_future(ws_send(self.ws, self.ws_i, data))
+        self.ws_i += 1
+
     def plant_capture_photo(self, plant_id: int, image):
         body = {
             'type': "PLANT_CAPTURE_PHOTO",
             'data': {
-                plant_id: plant_id,
-                image: image,  # Must be base64 encoded
+                'plant_id': plant_id,
+                'image': image,  # Must be base64 encoded
             }
         }
 
-        self.ws.send(body)
+        self.__send(body, friendly=False)
 
     def create_log_entry(self, type, message, severity=LogSeverity.INFO,
                          plant_id=None):
@@ -80,7 +119,7 @@ class Remote(object):
             }
         }
 
-        self.ws.send(body)
+        self.__send(body)
 
     def update_soil_moisture(self, plant, moisture):
         body = {
@@ -91,10 +130,11 @@ class Remote(object):
             }
         }
 
-        self.ws.send(body)
+        self.__send(body)
 
     def close(self):
-        self.ws.close()
+        if hasattr(self, "ws"):
+            self.ws.close()
 
     def add_callback(self, type, fn):
         self.callbacks[type] = fn

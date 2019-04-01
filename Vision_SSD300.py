@@ -207,9 +207,8 @@ class Vision:
         # Set class label
         label = 'Plant' if int(prediction[1]) == 16 else 'Obstacle'
 
-        log.info("Prediction: {0}, confidence={1:.10f}, boxpoints={2}".format(label,
-                                                                              round(prediction[2], 4),
-                                                                              pred_boxpts))
+        if label is 'Plant':
+            log.info("Prediction: {0}, confidence={1:.10f}, boxpoints={2}".format(label, round(prediction[2], 4), pred_boxpts))
 
         # Draw bounding box and class label with its probability
         self.visualise_prediction(frame, pred_boxpts, label, prediction[2])

@@ -27,7 +27,7 @@ class GrowBot:
         self.front_sensor = ev3.UltrasonicSensor('in1')
         self.back_sensor = ev3.UltrasonicSensor('in2')
 
-        self.arm_rotation_count = 7 # Number of rotation for the motor to perform to raise/lower the arm
+        self.arm_rotation_count = 4 # Number of rotation for the motor to perform to raise/lower the arm
         self.motor_running_speed = 500 # Default running speed to both mobilisation motors
         self.motor_running_time = 1 # Default running time for both mobilisation motors, in seconds
         self.turning_constant = 61 # Constant used for turning around
@@ -106,7 +106,7 @@ class GrowBot:
             self.right_motor.run_forever(speed_sp=int(running_speed))
         else:
             self.left_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
-            self.right_motor.run_forever(speed_sp=int(running_speed), time_sp=running_time * 1000)
+            self.right_motor.run_timed(speed_sp=int(running_speed), time_sp=running_time * 1000)
             for _ in range(100):
                 time.sleep(running_time / 100)
 
