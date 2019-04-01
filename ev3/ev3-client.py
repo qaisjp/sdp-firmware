@@ -38,6 +38,7 @@ class EV3_Client:
             except KeyboardInterrupt:
                 self.firmware.stop()
         except websockets.exceptions.ConnectionClosed:
+            self.firmware.stop()
             self.connect(sender)
 
     @asyncio.coroutine
