@@ -11,21 +11,22 @@ import SigFinish
 from enum import Enum
 
 class LogColour(Enum):
+    RESET = "\033[0m"
     ERRR = "\033[0;31m"
     PASS = "\033[0;32m"
     WARN = "\033[0;33m"
     BLUE = "\033[0;34m"
-    BAGN = "\033[0;35m"
+    MAGN = "\033[0;35m"
     CYAN = "\033[0;36m"
     ERRR_IMP = "\033[1;37;41m"
     PASS_IMP = "\033[1;37;42m"
-    WARN_IMP = "\033[1;37;43m"
+    WARN_IMP = "\033[1;30;43m"
     BLUE_IMP = "\033[1;37;44m"
     MAGN_IMP = "\033[1;37;45m"
     CYAN_IMP = "\033[1;37;46m"
 
 class EV3_Client:
-    def __init__(self, host="10.42.0.1"):
+    def __init__(self, host="localhost"):
         self.host = host
         self.est = False
         self.ws_receiver = None
@@ -64,11 +65,11 @@ class EV3_Client:
                 break
             except ConnectionRefusedError:
                 # Connection refused, repeat trying in a few seconds
-                log.warn("Connection to port {} refused, trying again in 5 seconds.".format(port_nr))
+                log.warning("{}Connection to port {} refused, trying again in 5 seconds.".format(LogColour.CYAN.value, port_nr))
                 yield from asyncio.sleep(5)
                 continue
 
-        log.info("Web socket connection established on {}:{}".format(self.ws_receiver.host, self.ws_receiver.port))
+        log.info("{}Web socket connection established on {}:{}".format(LogColour.PASS_IMP.value, self.ws_receiver.host, self.ws_receiver.port))
         try:
             while True:
                 msg = yield from self.ws_receiver.recv()
@@ -86,7 +87,7 @@ class EV3_Client:
                 break
             except ConnectionRefusedError:
                 # Connection refused, repeat trying in a few seconds
-                log.warn("Connection to port {} refused, trying again in 5 seconds.".format(port_nr))
+                log.warning("{}Connection to port {} refused, trying again in 5 seconds.".format(LogColour.CYAN_IMP.value, port_nr))
                 yield from asyncio.sleep(5)
                 continue
 
@@ -535,7 +536,7 @@ def socket_error_message_loop(msg):
             break
         except ConnectionRefusedError:
             # Connection refused, repeat trying in a few seconds
-            log.warn("Connection to port {} refused, trying again in 5 seconds.".format(19221))
+            log.warning("Connection to port {} refused, trying again in 5 seconds.".format(19221))
             yield from asyncio.sleep(5)
             continue
 
@@ -552,7 +553,7 @@ def socket_error_message_loop(msg):
 
 
 def main():
-    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s" + LogColour.RESET.value, level=log.INFO, stream=sys.stdout)
     try:
         ev3 = EV3_Client()
 
@@ -579,7 +580,7 @@ def main():
         except KeyboardInterrupt:
             ev3.firmware.stop()
     except IOError as e:
-        log.error("\033[1;37;41m[EV3] Error encountered, attempting to send message to Pi...\033[0m")
+        log.error(LogColour.ERRR_IMP.value + "[EV3] Error encountered, attempting to send message to Pi...")
         log.info("[EV3] Error details: {}".format(str(e)))
         asyncio.get_event_loop().run_until_complete(socket_error_message_loop(str(e)))
 
