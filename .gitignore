@@ -131,3 +131,6 @@ dmypy.json
 .venv/
 
 # End of https://www.gitignore.io/api/python
+
+# The file containing last sensor read time
+sensor_read

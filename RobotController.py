@@ -13,6 +13,8 @@ import os
 import time
 import base64
 import cv2
+from serial_io import SerialIO
+import json
 
 
 class RobotController:
@@ -34,6 +36,7 @@ class RobotController:
         self.current_qr_approached = None
         self.approach_complete = True
         self.retrying_approach = False
+        self.serial_io = SerialIO('/dev/ttyACM0', 115200, self)
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -73,6 +76,9 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
+        # If sensor is last read 
+        if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
+            asyncio.ensure_future(self.serial_io.read_value()) # Do the sensor read thing here
 
         self.received_frame = frame
         self.navigator.on_new_frame(predictions)
