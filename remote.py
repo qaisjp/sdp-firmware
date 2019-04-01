@@ -32,6 +32,13 @@ class LogSeverity(Enum):
     DANGER = 3
 
 
+@asyncio.coroutine
+def ws_send(ws, i, data):
+    print("start {}".format(i))
+    yield from ws.send(json.dumps(data))
+    print("end {}".format(i))
+
+
 class Remote(object):
     def __init__(self, id, host="wss://api.growbot.tardis.ed.ac.uk"):
         log.info("[REMOTE] Init {}".format(id))
@@ -39,6 +46,7 @@ class Remote(object):
         self.host = host
         self.callbacks = {}
         self.ws = None
+        self.ws_i = 0
         self.__queue = []
 
     @asyncio.coroutine
@@ -81,7 +89,8 @@ class Remote(object):
 
         thname = threading.current_thread().name
         log.info("[REMOTE] [Thread:{}] Sending message {}".format(thname, friendly_data))
-        asyncio.ensure_future(self.ws.send(json.dumps(data)))
+        asyncio.ensure_future(ws_send(self.ws, self.ws_i, data))
+        self.ws_i += 1
 
     def plant_capture_photo(self, plant_id: int, image):
         body = {
