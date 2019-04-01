@@ -77,6 +77,19 @@ class RobotController:
         if not self.standby_mode:
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
+        else:
+            # Stop immediately? Wait until the jobs to finish to stop?
+            if not self.approach_complete:
+                pass
+            elif self.retrying_approach:
+                pass
+            else:
+                # Any other switches to flip?
+                # Reset read QR codes
+                self.current_qr_approached = None
+                self.last_qr_approached = None
+                # Stop the motor
+                self.navigator.remote_motor_controller.stop()
 
     def read_qr_code(self):
         # Read the QR code
@@ -132,6 +145,16 @@ class RobotController:
         self.sched.push_events(list(map(Event.from_dict, data)))
         pass
 
+    def on_leaving_standby(self):
+        # Start random search
+        self.navigator.random_search_mode = True
+        self.navigator.remote_motor_controller.random_walk()
+
+        # Turn off standby mode
+        self.standby_mode = False
+
+    def on_entering_standby(self):
+        self.standby_mode = True
 
 def main():
     if os.getenv("http_proxy") is not None:
