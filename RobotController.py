@@ -34,6 +34,7 @@ class RobotController:
         self.current_qr_approached = None
         self.approach_complete = True
         self.retrying_approach = False
+        self.standby_mode = True
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -73,9 +74,9 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
-
-        self.received_frame = frame
-        self.navigator.on_new_frame(predictions)
+        if not self.standby_mode:
+            self.received_frame = frame
+            self.navigator.on_new_frame(predictions)
 
     def read_qr_code(self):
         # Read the QR code
