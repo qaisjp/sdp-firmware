@@ -432,6 +432,7 @@ class EV3_Client:
 
         if time.time() - approach_start > 10:
             log.info("Approach timeout, retreat.")
+            self.firmware.stop()
             self.firmware.lower_arm()
             self.retry_approach_routine()
             self.approach_complete = True
