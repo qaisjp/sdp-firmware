@@ -67,14 +67,18 @@ class Remote(object):
             else:
                 log.error("[REMOTE] Uncaught message for type {} with data {}".format(type, data))
 
-    def __send(self, data):
+    def __send(self, data, friendly=True):
         # The we haven't connected yet, queue messages
         if self.ws is None:
             log.info("[REMOTE] Queueing message {}".format(data))
             self.__queue.append(data)
             return
 
-        log.info("[REMOTE] Sending message {}".format(data))
+        friendly_data = {"type": data["type"]}
+        if friendly:
+            friendly_data["data"] = data["data"]
+
+        log.info("[REMOTE] Sending message {}".format(friendly_data))
         asyncio.ensure_future(self.ws.send(json.dumps(data)))
 
     def plant_capture_photo(self, plant_id: int, image):
@@ -86,7 +90,7 @@ class Remote(object):
             }
         }
 
-        self.__send(body)
+        self.__send(body, friendly=False)
 
     def create_log_entry(self, type, message, severity=LogSeverity.INFO,
                          plant_id=None):
