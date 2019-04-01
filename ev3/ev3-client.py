@@ -28,14 +28,17 @@ class EV3_Client:
 
     def connect(self, sender=False):
         try:
-            if not sender:
-                log.info("Connecting receiver to Pi receiver...")
-                asyncio.get_event_loop().run_until_complete(self.setup_receiver())
-            else:
-                log.info("Connecting sender to Pi sender...")
-                asyncio.get_event_loop().run_until_complete(self.setup_sender())
-        except KeyboardInterrupt:
-            self.firmware.stop()
+            try:
+                if not sender:
+                    log.info("Connecting receiver to Pi receiver...")
+                    asyncio.get_event_loop().run_until_complete(self.setup_receiver())
+                else:
+                    log.info("Connecting sender to Pi sender...")
+                    asyncio.get_event_loop().run_until_complete(self.setup_sender())
+            except KeyboardInterrupt:
+                self.firmware.stop()
+        except websockets.exceptions.ConnectionClosed:
+            self.connect(sender)
 
     @asyncio.coroutine
     def setup_receiver(self, port_nr=8866):
