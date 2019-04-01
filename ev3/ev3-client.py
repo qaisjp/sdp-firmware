@@ -8,6 +8,21 @@ import random
 import time
 import json
 import SigFinish
+from enum import Enum
+
+class LogColour(Enum):
+    ERRR = "\033[0;31m"
+    PASS = "\033[0;32m"
+    WARN = "\033[0;33m"
+    BLUE = "\033[0;34m"
+    BAGN = "\033[0;35m"
+    CYAN = "\033[0;36m"
+    ERRR_IMP = "\033[1;37;41m"
+    PASS_IMP = "\033[1;37;42m"
+    WARN_IMP = "\033[1;37;43m"
+    BLUE_IMP = "\033[1;37;44m"
+    MAGN_IMP = "\033[1;37;45m"
+    CYAN_IMP = "\033[1;37;46m"
 
 class EV3_Client:
     def __init__(self, host="10.42.0.1"):
