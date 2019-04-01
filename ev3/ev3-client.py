@@ -548,8 +548,8 @@ def main():
                 name="ws_receiver_thread",
                 target=socket_receiver_establish_loop,
                 args=(ev3, ws_receiver,),
+                daemon=True,
             )
-            ws_receiver_thread.setDaemon(True)
             ws_receiver_thread.start()
 
             ws_sender = asyncio.new_event_loop()
@@ -557,8 +557,8 @@ def main():
                 name="ws_sender_thread",
                 target=socket_sender_establish_loop,
                 args=(ev3, ws_sender,),
+                daemon=True,
             )
-            ws_sender_thread.setDaemon(True)
             ws_sender_thread.start()
 
             asyncio.get_event_loop().run_forever()
