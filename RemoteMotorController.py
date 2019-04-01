@@ -88,7 +88,8 @@ class RemoteMotorController:
             msg_send = ""
             if "message" in package:
                 msg_send = package["message"]
-            self.remote.create_log_entry(LogType.UNKNOWN, package["type"] + ": " + msg_send, severity=LogSeverity(package["severity"]))
+            if package["type"] != "sensor":
+                self.remote.create_log_entry(LogType.UNKNOWN, package["type"] + ": " + msg_send, severity=LogSeverity(package["severity"]))
 
     def generate_action_package(self, msg):
         out = {
