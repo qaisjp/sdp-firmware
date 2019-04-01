@@ -26,7 +26,7 @@ class LogColour(Enum):
     CYAN_IMP = "\033[1;37;46m"
 
 class EV3_Client:
-    def __init__(self, host="10.42.0.1"):
+    def __init__(self, host="localhost"):
         self.host = host
         self.est = False
         self.ws_receiver = None
@@ -41,6 +41,9 @@ class EV3_Client:
         self.retry_complete = False
         self.approach_escape_complete = False
         self.approach_problem = False
+
+    def generate_log(self, msg, color=LogColour.RESET):
+        return color.value + msg
 
     def connect(self, sender=False):
         try:
@@ -65,7 +68,7 @@ class EV3_Client:
                 break
             except ConnectionRefusedError:
                 # Connection refused, repeat trying in a few seconds
-                log.warning("{}Connection to port {} refused, trying again in 5 seconds.".format(LogColour.CYAN.value, port_nr))
+                log.warning(self.generate_log("Connection to port {} refused, trying again in 5 seconds.".format(port_nr), LogColour.WARN))
                 yield from asyncio.sleep(5)
                 continue
 
@@ -87,7 +90,7 @@ class EV3_Client:
                 break
             except ConnectionRefusedError:
                 # Connection refused, repeat trying in a few seconds
-                log.warning("{}Connection to port {} refused, trying again in 5 seconds.".format(LogColour.CYAN_IMP.value, port_nr))
+                log.warning(self.generate_log("Connection to port {} refused, trying again in 5 seconds.".format(port_nr), LogColour.WARN))
                 yield from asyncio.sleep(5)
                 continue
 
@@ -98,7 +101,7 @@ class EV3_Client:
                 "turning_constant": str(self.firmware.turning_constant),
                 "severity": 0
             }
-            log.info("[EV3 > Pi] Sending init info: {}".format(json.dumps(init_package)))
+            # log.info("[EV3 > Pi] Sending init info: {}".format(json.dumps(init_package)))
             # yield from self.ws_sender.send(json.dumps(init_package))
 
             while True:
