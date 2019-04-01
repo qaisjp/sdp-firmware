@@ -26,7 +26,7 @@ class LogColour(Enum):
     CYAN_IMP = "\033[1;37;46m"
 
 class EV3_Client:
-    def __init__(self, host="localhost"):
+    def __init__(self, host="10.42.0.1"):
         self.host = host
         self.est = False
         self.ws_receiver = None
