@@ -3,6 +3,7 @@ import websockets
 import json
 import asyncio
 import logging as log
+import threading
 
 
 class UnhandledRPCTranslationException(Exception):
@@ -78,7 +79,8 @@ class Remote(object):
         if friendly:
             friendly_data["data"] = data["data"]
 
-        log.info("[REMOTE] Sending message {}".format(friendly_data))
+        thname = threading.current_thread().name
+        log.info("[REMOTE] [Thread:{}] Sending message {}".format(thname, friendly_data))
         asyncio.ensure_future(self.ws.send(json.dumps(data)))
 
     def plant_capture_photo(self, plant_id: int, image):
