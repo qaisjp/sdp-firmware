@@ -51,6 +51,8 @@ class RobotController:
                 RPCType.MOVE_IN_DIRECTION, self.remote_move)
             self.remote.add_callback(
                 RPCType.EVENTS, self.on_events_received)
+            self.remote.add_callback(
+                RPCType.SET_STANDBY, self.set_standby)
 
             rm_thread = threading.Thread(target=self.thread_remote,
                                          daemon=True)
@@ -103,7 +105,7 @@ class RobotController:
                     # Stop the motor
                     self.navigator.remote_motor_controller.stop()
                     self.standby_invoked = True
-                    
+
 
     def read_qr_code(self):
         # Read the QR code
@@ -159,7 +161,11 @@ class RobotController:
         # self.sched.push_events(list(map(Event.from_dict, data)))
         pass
 
-    def on_leaving_standby(self):
+    def set_standby(self, mode):
+        if mode:
+            self.standby_mode = True
+            return
+
         # Start random search
         self.navigator.random_search_mode = True
         self.navigator.remote_motor_controller.random_walk()
@@ -168,8 +174,6 @@ class RobotController:
         self.standby_mode = False
         self.standby_invoked = False
 
-    def on_entering_standby(self):
-        self.standby_mode = True
 
 def main():
     if os.getenv("http_proxy") is not None:
