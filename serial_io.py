@@ -35,6 +35,7 @@ class SerialIO:
             value = [0,1]
             value[0] = int(self.ser.readline()) # Attempts to read the sensor
             print(str(value[0]))
+            asyncio.set_event_loop(asyncio.new_event_loop())
             self.callback.remote.update_soil_moisture(1, value[0])
             log.info("[SENSOR] Read sensor {} with value {}".format(self.baudrate, str(value[0])))
             # Update time read to now
