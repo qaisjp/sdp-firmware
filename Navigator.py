@@ -21,7 +21,7 @@ class Navigator:
         rm.connect(sender=False, port_nr=19221)
         loop.run_forever()
 
-    def __init__(self, robot_controller, obstacle_threshold=0.5, plant_approach_threshold=0.50, escape_delay=15, constant_delta=8, random_search_frame_timeout=8, verbose=False):
+    def __init__(self, robot_controller, obstacle_threshold=0.5, plant_approach_threshold=0.50, escape_delay=15, constant_delta=8, random_search_frame_timeout=8, verbose=False, approach_frame_timeout=8):
         """
         Constructor for Navigator class.
         :param robot_controller:        RobotController instance coordinating vision and motor control
@@ -49,7 +49,10 @@ class Navigator:
         self.escape_mode_time = time.time()
 
         self.random_search_frame_timeout = random_search_frame_timeout
+        self.approach_frame_timeout = approach_frame_timeout
+
         self.random_search_timeout_counter = self.random_search_frame_timeout
+        self.approach_frame_counter = self.approach_frame_timeout
 
         # Frame details.
         self.frame_width = 640
@@ -148,8 +151,6 @@ class Navigator:
         else:
             # Plant not detected. Perform random search if not searching already.
             if not self.random_search_mode:
-                # TODO: get rid of hardcoded values.
-
                 if self.random_search_timeout_counter is not 0:
                     self.random_search_timeout_counter = self.random_search_timeout_counter - 1
                 else:
@@ -197,6 +198,15 @@ class Navigator:
         self.robot_controller.read_qr_code()
 
         if self.is_plant_approached(plant):
+
+            # Count frames to skip.
+            if self.approach_frame_counter is not 0:
+                self.approach_frame_counter = self.approach_frame_counter - 1
+                return
+            else:
+                self.approach_frame_counter = self.approach_frame_timeout
+
+
             if self.is_centered_plant(plant):
                 self.backing = False
                 log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
