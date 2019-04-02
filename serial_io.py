@@ -5,8 +5,6 @@ import time
 import logging as log
 import sys
 
-
-
 #ser = serial.Serial('/dev/ttyACM0',115200)
 #s = [0,1]
 #s[0] = str(int(ser.readline()))
@@ -33,7 +31,7 @@ class SerialIO:
             value[0] = int(self.ser.readline()) # Attempts to read the sensor
             print(str(value[0]))
             # self.callback.remote.update_soil_moisture(1, value[0])
-            log.info("[SENSOR] Read sensor {} with value {}".format(self.baudrate, str(value)))
+            log.info("[SENSOR] Read sensor {} with value {}".format(self.baudrate, str(value[0])))
             # Update time read to now
             with open("sensor_read", mode="w") as sensor_write:
                 sensor_write.write(time.time())
