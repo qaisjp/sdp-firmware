@@ -13,7 +13,7 @@ import os
 import time
 import base64
 import cv2
-
+import keyboard
 
 class RobotController:
     model_xml = '/home/student/ssd300.xml'
@@ -59,6 +59,7 @@ class RobotController:
         self.navigator = Navigator(self, verbose=True)
 
         threading.Thread(target=self.vision.start).start()
+        threading.Thread(target=self.detect_key_press).start()
 
     def remote_move(self, direction):
         self.navigator.remote_move(direction)
@@ -163,6 +164,15 @@ class RobotController:
 
     def on_entering_standby(self):
         self.standby_mode = True
+
+    def detect_key_press(self):
+        while True:
+            if keyboard.is_pressed('s'):
+                self.on_entering_standby()
+            elif keyboard.is_pressed('c'):
+                self.on_leaving_standby()
+            else:
+                pass
 
 def main():
     if os.getenv("http_proxy") is not None:
