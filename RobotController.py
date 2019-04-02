@@ -91,7 +91,6 @@ class RobotController:
             # Stop immediately? Wait until the jobs to finish to stop?
             if not self.approach_complete:
                 log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
-                pass
             elif self.retrying_approach:
                 log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
             else:
