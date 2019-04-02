@@ -16,6 +16,7 @@ class RPCType(Enum):
     DEMO_START = "demo/start"
     SETTINGS_PATCH = "settings/patch"
     EVENTS = "events"
+    SET_STANDBY = "standby"
 
 
 @unique
@@ -101,6 +102,7 @@ class Remote(object):
             }
         }
 
+        log.info("[REMOTE] Sending an image of plant {}".format(str(plant_id)))
         self.__send(body, friendly=False)
 
     def create_log_entry(self, type, message, severity=LogSeverity.INFO,
@@ -150,6 +152,8 @@ class Remote(object):
         elif type == RPCType.SETTINGS_PATCH:
             fn(data["Key"], data["Value"])
         elif type == RPCType.EVENTS:
+            fn(data)
+        elif type == RPCType.SET_STANDBY:
             fn(data)
         else:
             raise UnhandledRPCTranslationException()

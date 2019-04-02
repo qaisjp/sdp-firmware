@@ -13,7 +13,8 @@ import os
 import time
 import base64
 import cv2
-
+from serial_io import SerialIO
+import json
 
 class RobotController:
     model_xml = '/home/student/ssd300.xml'
@@ -34,6 +35,9 @@ class RobotController:
         self.current_qr_approached = None
         self.approach_complete = True
         self.retrying_approach = False
+        self.standby_mode = True
+        self.standby_invoked = True
+        self.serial_io = SerialIO('/dev/ttyACM0', 115200, self)
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -47,6 +51,8 @@ class RobotController:
                 RPCType.MOVE_IN_DIRECTION, self.remote_move)
             self.remote.add_callback(
                 RPCType.EVENTS, self.on_events_received)
+            self.remote.add_callback(
+                RPCType.SET_STANDBY, self.set_standby)
 
             rm_thread = threading.Thread(target=self.thread_remote,
                                          daemon=True)
@@ -64,7 +70,7 @@ class RobotController:
     def thread_remote(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        self.sched = Scheduler()
+        # self.sched = Scheduler()
         loop.run_until_complete(self.remote.connect())
 
     def process_visual_data(self, predictions, frame):
@@ -73,9 +79,31 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
+        # If the sensor's last read time is long enough (1 hour), attempt to read the sensor
+        if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
+            threading.Thread(target=self.serial_io.read_value).start()
 
-        self.received_frame = frame
-        self.navigator.on_new_frame(predictions)
+        if not self.standby_mode:
+            self.received_frame = frame
+            self.navigator.on_new_frame(predictions)
+        else:
+            log.info("\033[0;34m[Pi] Standby mode flag detected")
+            # Stop immediately? Wait until the jobs to finish to stop?
+            if not self.approach_complete:
+                log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
+            elif self.retrying_approach:
+                log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
+            else:
+                if not self.standby_invoked:
+                    log.info("\033[1;37;44m[Pi] Invoking standby mode")
+                    # Any other switches to flip?
+                    # Reset read QR codes
+                    self.current_qr_approached = None
+                    self.last_qr_approached = None
+                    # Stop the motor
+                    self.navigator.remote_motor_controller.stop()
+                    self.standby_invoked = True
+
 
     def read_qr_code(self):
         # Read the QR code
@@ -128,8 +156,24 @@ class RobotController:
         pass
 
     def on_events_received(self, data):
-        self.sched.push_events(list(map(Event.from_dict, data)))
+        # self.sched.push_events(list(map(Event.from_dict, data)))
         pass
+
+    def set_standby(self, mode):
+        if mode:
+            self.standby_mode = True
+            return
+
+        while not hasattr(self, "navigator"):
+            pass
+
+        # Start random search
+        self.navigator.random_search_mode = True
+        self.navigator.remote_motor_controller.random_walk()
+
+        # Turn off standby mode
+        self.standby_mode = False
+        self.standby_invoked = False
 
 
 def main():
@@ -138,7 +182,7 @@ def main():
         print("Use start.sh. Do not run this Python file yourself.")
         return
 
-    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s\033[0m", level=log.INFO, stream=sys.stdout)
     RobotController()
 
 
