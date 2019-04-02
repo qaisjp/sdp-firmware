@@ -13,6 +13,8 @@ import os
 import time
 import base64
 import cv2
+from serial_io import SerialIO
+import json
 
 class RobotController:
     model_xml = '/home/student/ssd300.xml'
@@ -35,6 +37,7 @@ class RobotController:
         self.retrying_approach = False
         self.standby_mode = True
         self.standby_invoked = True
+        self.serial_io = SerialIO('/dev/ttyACM0', 115200, self)
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -74,6 +77,10 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
+        # If the sensor's last read time is long enough (1 hour), attempt to read the sensor
+        if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
+            threading.Thread(target=self.serial_io.read_value).start()
+
         if not self.standby_mode:
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
@@ -96,6 +103,7 @@ class RobotController:
                     # Stop the motor
                     self.navigator.remote_motor_controller.stop()
                     self.standby_invoked = True
+                    
 
     def read_qr_code(self):
         # Read the QR code
