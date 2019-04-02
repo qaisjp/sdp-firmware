@@ -26,7 +26,7 @@ class Navigator:
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.5,
                  escape_delay=15,
-                 constant_delta=5,
+                 constant_delta=10,
                  verbose=False,
                  approach_frame_timeout=8,
                  random_search_frame_timeout=8):
@@ -61,6 +61,7 @@ class Navigator:
 
         self.random_search_timeout_counter = self.random_search_frame_timeout
         self.approach_frame_counter = self.approach_frame_timeout
+        self.approach_active_counter = 10
 
         # Frame details.
         self.frame_width = 640
@@ -253,6 +254,10 @@ class Navigator:
                 log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
                 self.remote_motor_controller.retry_approach()
         else:
+            if self.approach_active_counter == 0:
+                self.approach_active_counter = 10
+                return
+
             if self.is_centered_plant(plant):
                 self.backing = False
                 log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
@@ -306,7 +311,7 @@ class Navigator:
                 sensor_count += 1
                 sensor_sum += i
         
-        if sensor_count > 0 and sensor_sum / sensor_count < 300:
+        if sensor_count > 0 and sensor_sum / sensor_count < 600:
             sensor_flag = True
 
         vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold

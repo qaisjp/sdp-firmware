@@ -375,7 +375,7 @@ class EV3_Client:
                         break
                     if self.stop_now:
                         # Stop the random walk now
-                        print("Triggered stop_now, stopping random turning...")
+                        print("Triggered stop_now, stopping random driving...")
                         self.firmware.stop() # Stop all motors
                         # TODO: what happens next?
                         self.stop_now = False
