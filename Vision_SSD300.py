@@ -11,7 +11,11 @@ from openvino.inference_engine import IENetwork, IEPlugin
 from websocket import create_connection
 from imutils.video import FPS
 
-def get_nets(model_xml, model_bin):
+model_xml = '/home/student/ssd300.xml'
+model_bin = '/home/student/ssd300.bin'
+
+
+def get_nets():
     # Initialize plugin
     log.info("Initializing plugin for MYRIAD X VPU...")
     plugin = IEPlugin(device='MYRIAD')
