@@ -24,9 +24,9 @@ class Navigator:
     def __init__(self,
                  robot_controller,
                  obstacle_threshold=0.5,
-                 plant_approach_threshold=0.7,
+                 plant_approach_threshold=0.5,
                  escape_delay=15,
-                 constant_delta=8,
+                 constant_delta=10,
                  verbose=False,
                  approach_frame_timeout=8,
                  random_search_frame_timeout=8):
@@ -294,7 +294,7 @@ class Navigator:
         :param plant:   Plant seen by the robot
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
-        sensor_flag = self.remote_motor_controller.front_sensor_value < 300
+        sensor_flag = self.remote_motor_controller.front_sensor_value < 300 or self.remote_motor_controller == 2550
         vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
 
         return sensor_flag or vision_flag

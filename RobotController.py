@@ -26,7 +26,7 @@ class RobotController:
                         RobotController.model_bin,
                         self,
                         is_headless=True,
-                        live_stream=False,
+                        live_stream=True,
                         confidence_interval=0.5)
 
         self.received_frame = None
