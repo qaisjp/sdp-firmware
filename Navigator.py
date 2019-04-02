@@ -28,7 +28,7 @@ class Navigator:
                  escape_delay=15,
                  constant_delta=10,
                  verbose=False,
-                 approach_frame_timeout=8,
+                 approach_frame_timeout=5,
                  random_search_frame_timeout=8):
         """
         Constructor for Navigator class.
@@ -186,6 +186,7 @@ class Navigator:
             # Stop random search.
             self.random_search_mode = False
             self.remote_motor_controller.stop()
+            self.random_search_timeout_counter = 8
 
         if not self.follow_mode:
             # Switch state
@@ -305,7 +306,7 @@ class Navigator:
                 sensor_count += 1
                 sensor_sum += i
         
-        if sensor_count > 0 and sensor_sum / sensor_count < 600:
+        if sensor_count > 0 and sensor_sum / sensor_count < 300:
             sensor_flag = True
 
         vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
