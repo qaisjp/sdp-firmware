@@ -20,7 +20,12 @@ class SerialIO:
         self.value_reading = False
         if os.path.isfile("sensor_read"):
             with open("sensor_read", mode="r") as sensor_read:
-                self.sensor_last_read = int(sensor_read.read())
+                read = sensor_read.read()
+                if read != '':
+                    self.sensor_last_read = float(sensor_read.read())
+                else:
+                    self.sensor_last_read = 0
+                sensor_read.close()
         else:
             self.sensor_last_read = 0
 
@@ -30,14 +35,14 @@ class SerialIO:
             value = [0,1]
             value[0] = int(self.ser.readline()) # Attempts to read the sensor
             print(str(value[0]))
-            # self.callback.remote.update_soil_moisture(1, value[0])
+            self.callback.remote.update_soil_moisture(1, value[0])
             log.info("[SENSOR] Read sensor {} with value {}".format(self.baudrate, str(value[0])))
             # Update time read to now
             with open("sensor_read", mode="w") as sensor_write:
-                sensor_write.write(time.time())
+                sensor_write.write(str(time.time()))
                 sensor_write.close()
             self.sensor_last_read = time.time()
-        except:
-            log.error("[SENSOR] Sensor value not read due to exception.")
+        except Exception as e:
+            log.error("[SENSOR] Sensor value not read due to exception: {}.".format(str(e)))
         finally:
             self.value_reading = False
