@@ -24,10 +24,12 @@ class Navigator:
     def __init__(self,
                  robot_controller,
                  obstacle_threshold=0.5,
-                 plant_approach_threshold=0.50,
+                 plant_approach_threshold=0.7,
                  escape_delay=15,
                  constant_delta=8,
-                 verbose=False):
+                 verbose=False,
+                 approach_frame_timeout=8,
+                 random_search_frame_timeout=8):
         """
         Constructor for Navigator class.
         :param robot_controller:        RobotController instance coordinating vision and motor control
@@ -54,8 +56,11 @@ class Navigator:
         self.escape_mode = False
         self.escape_mode_time = time.time()
 
-        self.random_search_timeout_counter = 8
-        self.plant_discovery_frame_count = 5
+        self.random_search_frame_timeout = random_search_frame_timeout
+        self.approach_frame_timeout = approach_frame_timeout
+
+        self.random_search_timeout_counter = self.random_search_frame_timeout
+        self.approach_frame_counter = self.approach_frame_timeout
 
         # Frame details.
         self.frame_width = 640
@@ -72,7 +77,7 @@ class Navigator:
         self.backing = False
 
         # Load angle approximation model.
-        with open("k2_ng_model.pkl", "rb") as input_file:
+        with open("k2_model.pkl", "rb") as input_file:
             self.angle_model = pickle.load(input_file)
 
         # Establish two websocket connections to new background threads
@@ -209,6 +214,14 @@ class Navigator:
         self.robot_controller.read_qr_code()
 
         if self.is_plant_approached(plant):
+
+            # Count frames to skip.
+            if self.approach_frame_counter is not 0:
+                self.approach_frame_counter = self.approach_frame_counter - 1
+                return
+            else:
+                self.approach_frame_counter = self.approach_frame_timeout
+
             if self.is_centered_plant(plant):
                 self.backing = False
                 log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
@@ -281,11 +294,10 @@ class Navigator:
         :param plant:   Plant seen by the robot
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
-        # return (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
-        retval = self.remote_motor_controller.front_sensor_value < 300
-        #log.info("Output of is_plant_approached(): {}".format(retval))
+        sensor_flag = self.remote_motor_controller.front_sensor_value < 300
+        vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
 
-        return retval
+        return sensor_flag or vision_flag
 
     def get_bb_area(self, prediction):
         """
