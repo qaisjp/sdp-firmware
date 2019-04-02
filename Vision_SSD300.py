@@ -27,7 +27,7 @@ class Vision:
         log.info("Instantiating Vision class...")
 
         # Websocket endpoint for live streaming
-        ws_endpoint = "ws://api.growbot.tardis.ed.ac.uk/stream-video/35ae6830-d961-4a9c-937f-8aa5bc61d6a3"
+        ws_endpoint = "wss://api.growbot.tardis.ed.ac.uk/stream-video/35ae6830-d961-4a9c-937f-8aa5bc61d6a3"
 
         self.is_headless = is_headless
         self.confidence_interval = confidence_interval
