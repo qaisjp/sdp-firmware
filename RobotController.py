@@ -94,7 +94,6 @@ class RobotController:
                 pass
             elif self.retrying_approach:
                 log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
-                pass
             else:
                 if not self.standby_invoked:
                     log.info("\033[1;37;44m[Pi] Invoking standby mode")
