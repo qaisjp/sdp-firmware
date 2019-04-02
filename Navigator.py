@@ -61,7 +61,6 @@ class Navigator:
 
         self.random_search_timeout_counter = self.random_search_frame_timeout
         self.approach_frame_counter = self.approach_frame_timeout
-        self.approach_active_counter = 10
 
         # Frame details.
         self.frame_width = 640
@@ -254,10 +253,6 @@ class Navigator:
                 log.info("\033[0;33m[follow_plant] Plant not in the centre.\033[0m")
                 self.remote_motor_controller.retry_approach()
         else:
-            if self.approach_active_counter == 0:
-                self.approach_active_counter = 10
-                return
-
             if self.is_centered_plant(plant):
                 self.backing = False
                 log.info("\033[0;32m[follow_plant] Plant found in the centre.\033[0m")
