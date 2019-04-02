@@ -1,6 +1,9 @@
 config.py
 rules.pickle.bin
 
+# The file containing last sensor read time
+sensor_read
+
 # VSCode settings
 .vscode/
 
