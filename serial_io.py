@@ -22,7 +22,7 @@ class SerialIO:
             with open("sensor_read", mode="r") as sensor_read:
                 read = sensor_read.read()
                 if read != '':
-                    self.sensor_last_read = float(sensor_read.read())
+                    self.sensor_last_read = float(read)
                 else:
                     self.sensor_last_read = 0
                 sensor_read.close()
