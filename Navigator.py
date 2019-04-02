@@ -294,7 +294,18 @@ class Navigator:
         :param plant:   Plant seen by the robot
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
-        sensor_flag = self.remote_motor_controller.front_sensor_value < 300 or self.remote_motor_controller == 2550
+        sensor_flag = False
+        sensor_sum = 0
+        sensor_count = 0
+        
+        for i in self.remote_motor_controller.front_sensor_value:
+            if i <= 2000:
+                sensor_count += 1
+                sensor_sum += i
+        
+        if sensor_flag and sensor_sum / sensor_count > 600:
+            sensor_flag = True
+        
         vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
 
         return sensor_flag or vision_flag
