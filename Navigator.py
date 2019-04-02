@@ -28,7 +28,7 @@ class Navigator:
                  escape_delay=15,
                  constant_delta=10,
                  verbose=False,
-                 approach_frame_timeout=5,
+                 approach_frame_timeout=8,
                  random_search_frame_timeout=8):
         """
         Constructor for Navigator class.

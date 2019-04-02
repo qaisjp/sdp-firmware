@@ -151,6 +151,7 @@ class RobotController:
 
     def on_retry_complete(self):
         self.retrying_approach = False
+        self.navigator.approach_frame_counter = 8
 
     def on_plant_seen(self):
         pass
