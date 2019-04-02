@@ -78,7 +78,8 @@ class RobotController:
         """
         # If sensor is last read 
         if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
-            asyncio.ensure_future(self.serial_io.read_value()) # Do the sensor read thing here
+           # asyncio.ensure_future(self.serial_io.read_value()) # Do the sensor read thing here
+            self.serial_io.read_value()
 
         self.received_frame = frame
         self.navigator.on_new_frame(predictions)
