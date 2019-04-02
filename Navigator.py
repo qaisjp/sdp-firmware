@@ -26,7 +26,7 @@ class Navigator:
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.5,
                  escape_delay=15,
-                 constant_delta=10,
+                 constant_delta=5,
                  verbose=False,
                  approach_frame_timeout=8,
                  random_search_frame_timeout=8):
@@ -186,7 +186,7 @@ class Navigator:
             # Stop random search.
             self.random_search_mode = False
             self.remote_motor_controller.stop()
-            self.random_search_timeout_counter = 8
+            self.approach_frame_counter = 8
 
         if not self.follow_mode:
             # Switch state
