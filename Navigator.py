@@ -21,14 +21,7 @@ class Navigator:
         rm.connect(sender=False, port_nr=19221)
         loop.run_forever()
 
-    def __init__(self,
-                 robot_controller,
-                 obstacle_threshold=0.5,
-                 plant_approach_threshold=0.50,
-                 escape_delay=15,
-                 constant_delta=8,
-                 random_search_frame_timeout=8
-                 verbose=False):
+    def __init__(self, robot_controller, obstacle_threshold=0.5, plant_approach_threshold=0.50, escape_delay=15, constant_delta=8, random_search_frame_timeout=8, verbose=False):
         """
         Constructor for Navigator class.
         :param robot_controller:        RobotController instance coordinating vision and motor control
