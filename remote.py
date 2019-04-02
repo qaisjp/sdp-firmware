@@ -101,6 +101,7 @@ class Remote(object):
             }
         }
 
+        log.info("[REMOTE] Sending an image of plant {}".format(str(plant_id)))
         self.__send(body, friendly=False)
 
     def create_log_entry(self, type, message, severity=LogSeverity.INFO,
