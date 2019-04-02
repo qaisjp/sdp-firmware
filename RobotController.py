@@ -19,10 +19,10 @@ class RobotController:
     model_xml = '/home/student/ssd300.xml'
     model_bin = '/home/student/ssd300.bin'
 
-    def __init__(self):
+    def __init__(self, net, exec_net):
         self.vision = Vision(
-                        RobotController.model_xml,
-                        RobotController.model_bin,
+                        net,
+                        exec_net,
                         self,
                         is_headless=True,
                         live_stream=False,

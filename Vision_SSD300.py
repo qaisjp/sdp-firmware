@@ -11,9 +11,23 @@ from openvino.inference_engine import IENetwork, IEPlugin
 from websocket import create_connection
 from imutils.video import FPS
 
+def get_nets(model_xml, model_bin):
+    # Initialize plugin
+    log.info("Initializing plugin for MYRIAD X VPU...")
+    plugin = IEPlugin(device='MYRIAD')
+
+    # Initialize network
+    log.info("Reading Intermediate Representation...")
+    net = IENetwork(model=model_xml, weights=model_bin)
+
+    # Load network into IE plugin
+    log.info("Loading Intermediate Representation to the plugin...")
+    exec_net = plugin.load(network=net, num_requests=2)
+
+    return net, exec_net
 
 class Vision:
-    def __init__(self, model_xml, model_bin, robot_controller, is_headless, live_stream, confidence_interval):
+    def __init__(self, net, exec_net, robot_controller, is_headless, live_stream, confidence_interval):
         """
         Vision class constructor.
         :param model_xml:           Network topology
@@ -34,21 +48,13 @@ class Vision:
         self.live_stream = live_stream
         self.robot_controller = robot_controller
 
-        # Initialize plugin
-        log.info("Initializing plugin for MYRIAD X VPU...")
-        self.plugin = IEPlugin(device='MYRIAD')
-
-        # Initialize network
-        log.info("Reading Intermediate Representation...")
-        self.net = IENetwork(model=model_xml, weights=model_bin)
+        # Instantiate nets
+        self.net = net
+        self.exec_net = exec_net
 
         # Initialize IO blobs
         self.input_blob = next(iter(self.net.inputs))
         self.out_blob = next(iter(self.net.outputs))
-
-        # Load network into IE plugin
-        log.info("Loading Intermediate Representation to the plugin...")
-        self.exec_net = self.plugin.load(network=self.net, num_requests=2)
 
         # Extract network's input layer information
         self.n, self.c, self.h, self.w = self.net.inputs[self.input_blob].shape

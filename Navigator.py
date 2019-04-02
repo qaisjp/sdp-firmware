@@ -27,6 +27,7 @@ class Navigator:
                  plant_approach_threshold=0.50,
                  escape_delay=15,
                  constant_delta=8,
+                 random_search_frame_timeout=8
                  verbose=False):
         """
         Constructor for Navigator class.
@@ -54,8 +55,8 @@ class Navigator:
         self.escape_mode = False
         self.escape_mode_time = time.time()
 
-        self.random_search_timeout_counter = 8
-        self.plant_discovery_frame_count = 5
+        self.random_search_frame_timeout = random_search_frame_timeout
+        self.random_search_timeout_counter = self.random_search_frame_timeout
 
         # Frame details.
         self.frame_width = 640
@@ -122,7 +123,7 @@ class Navigator:
             return
             # Send stop?
 
-        # Wait n frames until turn is complete
+        # Skip n frames until turn is complete
         if self.frame_count is not None:
             if self.frame_count is not 0:
                 self.frame_count = self.frame_count - 1
@@ -135,12 +136,6 @@ class Navigator:
 
         if self.prediction_dict["plants"]:
             # Plant detected.
-
-            #if self.plant_discovery_frame_count is not 0:
-            #    self.plant_discovery_frame_count = self.plant_discovery_frame_count - 1
-            #    return
-            #else:
-            #    self.plant_discovery_frame_count = 5
 
             if self.prediction_dict["plants"]:
                 plant = next(iter(self.prediction_dict["plants"]))
@@ -165,7 +160,7 @@ class Navigator:
                 if self.random_search_timeout_counter is not 0:
                     self.random_search_timeout_counter = self.random_search_timeout_counter - 1
                 else:
-                    self.random_search_timeout_counter = 8
+                    self.random_search_timeout_counter = self.random_search_frame_timeout
 
                     log.info("\033[0;35m[change_state_on_new_frame] Performing random walk...\033[0m")
                     self.random_search_mode = True
