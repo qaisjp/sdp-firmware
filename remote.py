@@ -16,6 +16,7 @@ class RPCType(Enum):
     DEMO_START = "demo/start"
     SETTINGS_PATCH = "settings/patch"
     EVENTS = "events"
+    SET_STANDBY = "standby"
 
 
 @unique
@@ -151,6 +152,8 @@ class Remote(object):
         elif type == RPCType.SETTINGS_PATCH:
             fn(data["Key"], data["Value"])
         elif type == RPCType.EVENTS:
+            fn(data)
+        elif type == RPCType.SET_STANDBY:
             fn(data)
         else:
             raise UnhandledRPCTranslationException()
