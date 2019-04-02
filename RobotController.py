@@ -164,6 +164,9 @@ class RobotController:
             self.standby_mode = True
             return
 
+        while not hasattr(self, "navigator"):
+            pass
+
         # Start random search
         self.navigator.random_search_mode = True
         self.navigator.remote_motor_controller.random_walk()
