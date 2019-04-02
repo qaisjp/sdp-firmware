@@ -35,6 +35,7 @@ class RobotController:
         self.approach_complete = True
         self.retrying_approach = False
         self.standby_mode = True
+        self.standby_invoked = True
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -78,18 +79,24 @@ class RobotController:
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
+            log.info("\033[0;34m[Pi] Standby mode flag detected")
             # Stop immediately? Wait until the jobs to finish to stop?
             if not self.approach_complete:
+                log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
                 pass
             elif self.retrying_approach:
+                log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
                 pass
             else:
-                # Any other switches to flip?
-                # Reset read QR codes
-                self.current_qr_approached = None
-                self.last_qr_approached = None
-                # Stop the motor
-                self.navigator.remote_motor_controller.stop()
+                if not self.standby_invoked:
+                    log.info("\033[1;37;44m[Pi] Invoking standby mode")
+                    # Any other switches to flip?
+                    # Reset read QR codes
+                    self.current_qr_approached = None
+                    self.last_qr_approached = None
+                    # Stop the motor
+                    self.navigator.remote_motor_controller.stop()
+                    self.standby_invoked = True
 
     def read_qr_code(self):
         # Read the QR code
@@ -152,6 +159,7 @@ class RobotController:
 
         # Turn off standby mode
         self.standby_mode = False
+        self.standby_invoked = False
 
     def on_entering_standby(self):
         self.standby_mode = True
@@ -162,7 +170,7 @@ def main():
         print("Use start.sh. Do not run this Python file yourself.")
         return
 
-    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s\033[0m", level=log.INFO, stream=sys.stdout)
     RobotController()
 
 
