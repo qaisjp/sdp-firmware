@@ -12,7 +12,6 @@ import sys
 
 class SerialIO:
     def __init__(self, address, baudrate, callback):
-        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
         self.ser = serial.Serial(port=address, baudrate=baudrate, timeout=5)
         self.address = address
         self.baudrate = baudrate
