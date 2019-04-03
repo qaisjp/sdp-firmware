@@ -6,6 +6,7 @@ import sys
 import math
 import base64
 import threading
+import asyncio
 
 from openvino.inference_engine import IENetwork, IEPlugin
 from websocket import create_connection
@@ -77,6 +78,7 @@ class Vision:
         Starts video capture and performs inference using MYRIAD X VPU
         :return:
         """
+        asyncio.set_event_loop(asyncio.new_event_loop())
         self.fps.start()
 
         log.info("Starting video stream. Press ESC to stop.")
