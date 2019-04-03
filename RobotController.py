@@ -210,6 +210,8 @@ class RobotController:
                 self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
                 if self.actions[plant_id] == []:
                     self.actions.pop(plant_id, None)
+        except:
+            pass
         finally:
             self.navigator.remote_motor_controller.approach_escape()
 
