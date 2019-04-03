@@ -186,6 +186,7 @@ class Navigator:
             # Stop random search.
             self.random_search_mode = False
             self.remote_motor_controller.stop()
+            self.approach_frame_counter = 8
 
         if not self.follow_mode:
             # Switch state
@@ -216,11 +217,13 @@ class Navigator:
         if self.is_plant_approached(plant):
 
             # Count frames to skip.
-            if self.approach_frame_counter is not 0:
-                self.approach_frame_counter = self.approach_frame_counter - 1
-                return
-            else:
-                self.approach_frame_counter = self.approach_frame_timeout
+            # if self.approach_frame_counter is not 0:
+            #     self.remote_motor_controller.stop()
+            #     log.info("Potential approach, skipping this frame")
+            #     self.approach_frame_counter = self.approach_frame_counter - 1
+            #     return
+            # else:
+            #     self.approach_frame_counter = self.approach_frame_timeout
 
             if self.is_centered_plant(plant):
                 self.backing = False
@@ -294,7 +297,18 @@ class Navigator:
         :param plant:   Plant seen by the robot
         :return:        True if area ratio is greater than plant_approach_threshold, otherwise false
         """
-        sensor_flag = self.remote_motor_controller.front_sensor_value < 300 or self.remote_motor_controller == 2550
+        sensor_flag = False
+        sensor_sum = 0
+        sensor_count = 0
+        
+        for i in self.remote_motor_controller.front_sensor_value:
+            if i <= 2000:
+                sensor_count += 1
+                sensor_sum += i
+        
+        if sensor_count > 0 and sensor_sum / sensor_count < 450:
+            sensor_flag = True
+
         vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
 
         return sensor_flag or vision_flag

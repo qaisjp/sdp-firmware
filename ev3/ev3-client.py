@@ -339,6 +339,10 @@ class EV3_Client:
                             break
                     currently_turning = False
                 else:
+                    if turn_left:
+                        self.firmware.right_side_turn(run_forever=False, run_by_time=True, running_time=1, running_speed=75)
+                    else:
+                        self.firmware.left_side_turn(run_forever=False, run_by_time=True, running_time=1, running_speed=75)
                     break
             else:
                 # Driving forward forever
@@ -371,7 +375,7 @@ class EV3_Client:
                         break
                     if self.stop_now:
                         # Stop the random walk now
-                        print("Triggered stop_now, stopping random turning...")
+                        print("Triggered stop_now, stopping random driving...")
                         self.firmware.stop() # Stop all motors
                         # TODO: what happens next?
                         self.stop_now = False
@@ -423,7 +427,7 @@ class EV3_Client:
     def retry_approach_routine(self):
         self.firmware.drive_backward(running_speed=100)
         backup_start = time.time()
-        backup_time = 10
+        backup_time = 5
         while time.time() - backup_start < backup_time:
             if self.back_sensor_value < self.firmware.sensor_obstacle_threshold * 10:
                 break
