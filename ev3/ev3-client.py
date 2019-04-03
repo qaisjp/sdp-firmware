@@ -432,7 +432,7 @@ class EV3_Client:
     def retry_approach_routine(self):
         self.firmware.drive_backward(running_speed=100)
         backup_start = time.time()
-        backup_time = 5
+        backup_time = 8
         while time.time() - backup_start < backup_time:
             if self.back_sensor_value < self.firmware.sensor_obstacle_threshold * 10:
                 break
