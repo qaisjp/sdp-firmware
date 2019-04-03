@@ -26,6 +26,7 @@ class Event():
     event_id = None
     recurrences = []
     actions = []
+    ephemeral = False
 
     test = 0
 
@@ -45,6 +46,7 @@ class Event():
         e.event_id = dict['id']
         e.recurrences = dict['recurrences']
         e.actions = dict['actions']
+        e.ephemeral = dict['ephemeral']
         return e
 
     def __str__(self):
