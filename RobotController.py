@@ -85,6 +85,9 @@ class RobotController:
         self.sched.run_event_cb = self.run_event
         loop.run_until_complete(self.remote.connect())
 
+    def enabled(self):
+        return len(self.actions) > 0 or not self.standby_mode
+
     def process_visual_data(self, predictions, frame):
         """
         Forwards messages to navigator instance.
@@ -95,7 +98,7 @@ class RobotController:
         if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
             threading.Thread(target=self.serial_io.read_value).start()
 
-        if not self.standby_mode:
+        if not self.enabled():
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
