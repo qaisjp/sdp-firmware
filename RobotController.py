@@ -218,6 +218,8 @@ class RobotController:
     def set_standby(self, mode, justMove=False):
         if mode:
             self.standby_mode = True
+            while not hasattr(self, "navigator"):
+                pass
             self.navigator.remote_motor_controller.stop()
             return
 
