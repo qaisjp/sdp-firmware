@@ -203,7 +203,7 @@ class RobotController:
         pass
 
     def on_events_received(self, data):
-        # self.sched.push_events(list(map(Event.from_dict, data)))
+        self.sched.push_events(list(map(Event.from_dict, data)))
         pass
 
     def set_standby(self, mode, justMove=False):
