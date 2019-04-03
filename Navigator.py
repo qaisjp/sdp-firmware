@@ -26,10 +26,10 @@ class Navigator:
                  obstacle_threshold=0.5,
                  plant_approach_threshold=0.5,
                  escape_delay=15,
-                 constant_delta=10,
+                 constant_delta=6,
                  verbose=False,
                  approach_frame_timeout=8,
-                 random_search_frame_timeout=8):
+                 random_search_frame_timeout=12):
         """
         Constructor for Navigator class.
         :param robot_controller:        RobotController instance coordinating vision and motor control
@@ -268,7 +268,8 @@ class Navigator:
 
                 #log.info("Area: {0}, MDelta: {1}".format(area,mdelta))
 
-                angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
+                # angle = self.angle_model.predict([[area, mdelta]])[0][0] *.65
+                angle = 62.2 / 640 * mdelta
 
                 if self.get_bb_midpoint(plant) > self.frame_midpoint:
                     # Turn right
@@ -338,7 +339,7 @@ class Navigator:
 
         flag = left <= bb_midpoint <= right
 
-        #log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
+        log.info("Left: {0}, Right: {1}, object_midpoint: {2}, Flag: {3}".format(left, right, bb_midpoint, flag))
 
         return flag
 
