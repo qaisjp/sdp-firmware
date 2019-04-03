@@ -38,6 +38,7 @@ class RobotController:
         self.standby_mode = True
         self.standby_invoked = True
         self.serial_io = SerialIO('/dev/ttyACM0', 115200, self)
+        self.actions = {}
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -67,10 +68,21 @@ class RobotController:
     def remote_move(self, direction):
         self.navigator.remote_move(direction)
 
+    def run_event(self, event):
+        if self.standby_mode and len(self.actions.keys()) == 0:
+            self.set_standby(False, justMove=True)
+        for action in event["actions"]:
+            pid = action["plant_id"]
+            if pid not in self.actions:
+                self.actions[pid] = []
+
+            self.actions[pid].append(action["name"])
+
     def thread_remote(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        # self.sched = Scheduler()
+        self.sched = Scheduler()
+        self.sched.run_event_cb = self.run_event
         loop.run_until_complete(self.remote.connect())
 
     def process_visual_data(self, predictions, frame):
@@ -160,9 +172,10 @@ class RobotController:
         # self.sched.push_events(list(map(Event.from_dict, data)))
         pass
 
-    def set_standby(self, mode):
+    def set_standby(self, mode, justMove=False):
         if mode:
             self.standby_mode = True
+            self.navigator.remote_motor_controller.stop()
             return
 
         while not hasattr(self, "navigator"):
@@ -172,9 +185,10 @@ class RobotController:
         self.navigator.random_search_mode = True
         self.navigator.remote_motor_controller.random_walk()
 
-        # Turn off standby mode
-        self.standby_mode = False
-        self.standby_invoked = False
+        if not justMove:
+            # Turn off standby mode
+            self.standby_mode = False
+            self.standby_invoked = False
 
 
 def main():
