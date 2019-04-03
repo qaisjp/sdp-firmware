@@ -88,6 +88,14 @@ class RobotController:
 
     def enabled(self):
         return len(self.actions) > 0 or not self.standby_mode
+    
+    def clean_actions(self):
+        new_actions = {}
+        for key in self.actions:
+            if self.actions[key] != []:
+                new_actions[key] = self.actions[key]
+
+        self.actions = new_actions
 
     def process_visual_data(self, predictions, frame):
         """
@@ -108,6 +116,7 @@ class RobotController:
 
         if self.enabled():
             log.info("self.actions: {}, standby_mode: {}".format(self.actions, self.standby_mode))
+            self.clean_actions()
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
@@ -158,7 +167,6 @@ class RobotController:
             if plant_id in self.actions:
                 if len(self.actions[plant_id]) == 0:
                     log.info("Plant {} has no task left to complete, leaving...".format(str(plant_id)))
-                    self.actions.pop(plant_id, None)
                     self.last_qr_approached = self.current_qr_approached
                     self.current_qr_approached = None
                     self.navigator.remote_motor_controller.approach_escape()
@@ -208,11 +216,7 @@ class RobotController:
     def on_approach_escape_complete(self):
         self.navigator.random_search_mode = True # Flip on the random search
         self.navigator.remote_motor_controller.random_walk()
-
-        for key in self.actions:
-            if self.actions[key] == []:
-                self.actions.pop(key, None)
-
+        self.clean_actions()
         self.approach_complete = True
 
     def on_retry_complete(self):
