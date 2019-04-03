@@ -22,35 +22,6 @@ class ActionName(Enum):
     ROBOT_RANDOM_MOVEMENT = 2
 
 
-class Action():
-    # name: ActionName
-    # plant_id: int
-    # data: map
-
-    def __init__(self, name, plant_id, data={}):
-        self.name = name
-        self.plant_id = plant_id
-        self.data = data
-
-    def perform(self):
-        if self.name == ActionName.PLANT_WATER:
-            log.warn("[SCHED] Watering plant_id {} & data {}".format(
-                self.plant_id, self.data))
-        elif self.name == ActionName.PLANT_CAPTURE_PHOTO:
-            log.warn("[SCHED] Taking pic of plant_id {} & data {}".format(
-                self.plant_id, self.data))
-        elif self.name == ActionName.EVENT_RANDOM_MOVEMENT:
-            log.warn("[SCHED] Supposed to randomly move")
-        else:
-            log.warn("[SCHED] Unknown action: "
-                     "name: {}, plant_id: {}, data: {}".format(
-                      self.name, self.plant_id, self.data))
-
-    def __str__(self):
-        return "Action(name={}, plant_id={}, data={})".format(
-            self.name.name, self.plant_id, self.data)
-
-
 class Event():
     event_id = None
     recurrences = []
@@ -68,23 +39,12 @@ class Event():
         return takewhile(lambda dt: dt.replace(tzinfo=None) < before,
                          filter(lambda dt: dt.replace(tzinfo=None) >= after, r))
 
-    def trigger(self):
-        if len(self.actions) == 0:
-            log.info("[SCHED] Event triggered:", self)
-            return
-
-        for action in self.actions:
-            action.perform()
-
     @staticmethod
     def from_dict(dict):
         e = Event()
         e.event_id = dict['id']
         e.recurrences = dict['recurrences']
-        for action in dict['actions']:
-            name = ActionName[action['name']]
-            a = Action(name, action['plant_id'], action['data'])
-            e.actions.append(a)
+        e.actions = dict['actions']
         return e
 
     def __str__(self):
@@ -123,6 +83,8 @@ class Scheduler():
 
         # Initialise backing sched
         self._sched = sched.scheduler(datetime.now, datetime_sleep)
+
+        self.run_event_cb = lambda e: print("Run event cb", e)
 
         # Scheduler initiated, first read schedule from disk
         self.disk_load()
@@ -196,7 +158,7 @@ class Scheduler():
         max_dt = min_dt + self.reload_freq
         for event in self.__events:
             for t in event.find_instances(after=min_dt, before=max_dt):
-                self._sched.enterabs(t.replace(tzinfo=None), 0, event.trigger)
+                self._sched.enterabs(t.replace(tzinfo=None), 0, lambda: self.run_event_cb(event))
 
         # Schedule a self reload after all events have elapsed
         self._sched.enterabs(max_dt, 1, self.reload)
