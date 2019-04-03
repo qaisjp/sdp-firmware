@@ -87,6 +87,7 @@ class RobotController:
         loop.run_until_complete(self.remote.connect())
 
     def enabled(self):
+        log.debug("self.actions: {}".format(self.actions))
         return len(self.actions) > 0 or not self.standby_mode
 
     def process_visual_data(self, predictions, frame):
@@ -105,23 +106,23 @@ class RobotController:
         else:
             if self.standby_mode:
                 log.info("\033[0;34m[Pi] Standby mode flag detected")
+                if not self.approach_complete:
+                    log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
+                elif self.retrying_approach:
+                    log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
+                else:
+                    self.navigator.remote_motor_controller.stop()
+                    if not self.standby_invoked:
+                        log.info("\033[1;37;44m[Pi] Invoking standby mode")
+                        # Any other switches to flip?
+                        # Reset read QR codes
+                        self.current_qr_approached = None
+                        self.last_qr_approached = None
+                        # Stop the motor
+                        self.standby_invoked = True
             elif len(self.actions) == 0:
                 log.info("\033[0;34m[Pi] Robot has no event left to complete")
             # Stop immediately? Wait until the jobs to finish to stop?
-            if not self.approach_complete:
-                log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
-            elif self.retrying_approach:
-                log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
-            else:
-                self.navigator.remote_motor_controller.stop()
-                if not self.standby_invoked:
-                    log.info("\033[1;37;44m[Pi] Invoking standby mode")
-                    # Any other switches to flip?
-                    # Reset read QR codes
-                    self.current_qr_approached = None
-                    self.last_qr_approached = None
-                    # Stop the motor
-                    self.standby_invoked = True
 
 
     def read_qr_code(self):
