@@ -72,7 +72,7 @@ class RobotController:
         if self.standby_mode and len(self.actions.keys()) == 0:
             self.set_standby(False, justMove=True)
         for action in event.actions:
-            pid = action.plant_id
+            pid = action["plant_id"]
             if pid not in self.actions:
                 self.actions[pid] = []
 
