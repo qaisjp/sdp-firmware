@@ -203,7 +203,16 @@ class RobotController:
         pass
 
     def on_events_received(self, data):
-        self.sched.push_events(list(map(Event.from_dict, data)))
+        events = list(map(Event.from_dict, data))
+        non_ephemeral = []
+
+        for e in events:
+            if e["ephemeral"]:
+                self.run_event(e)
+            else:
+                non_ephemeral.append(e)
+
+        self.sched.push_events(non_ephemeral)
         pass
 
     def set_standby(self, mode, justMove=False):
