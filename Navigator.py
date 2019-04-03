@@ -82,12 +82,12 @@ class Navigator:
 
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
-        ws_sender_thread = threading.Thread(target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
+        ws_sender_thread = threading.Thread(name="ws_sender", target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
         ws_sender_thread.setDaemon(True)
         ws_sender_thread.start()
 
         ws_receiver_loop = asyncio.new_event_loop()
-        ws_receiver_thread = threading.Thread(target=self.receiver_action, args=(self.remote_motor_controller, ws_receiver_loop,))
+        ws_receiver_thread = threading.Thread(name="ws_receiver", target=self.receiver_action, args=(self.remote_motor_controller, ws_receiver_loop,))
         ws_receiver_thread.setDaemon(True)
         ws_receiver_thread.start()
 
@@ -300,12 +300,12 @@ class Navigator:
         sensor_flag = False
         sensor_sum = 0
         sensor_count = 0
-        
+
         for i in self.remote_motor_controller.front_sensor_value:
             if i <= 2000:
                 sensor_count += 1
                 sensor_sum += i
-        
+
         if sensor_count > 0 and sensor_sum / sensor_count < 450:
             sensor_flag = True
 

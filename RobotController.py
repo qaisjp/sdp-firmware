@@ -57,14 +57,14 @@ class RobotController:
                 RPCType.SET_STANDBY, self.set_standby)
 
             rm_thread = threading.Thread(target=self.thread_remote,
-                                         daemon=True)
+                                         name="remote", daemon=True)
             rm_thread.start()
             # rm_thread.join()
 
         # Create the navigation system
         self.navigator = Navigator(self, verbose=True)
 
-        threading.Thread(target=self.vision.start).start()
+        threading.Thread(target=self.vision.start, name="vision").start()
 
     def remote_move(self, direction):
         self.navigator.remote_move(direction)
@@ -97,7 +97,7 @@ class RobotController:
         """
         # If the sensor's last read time is long enough (1 hour), attempt to read the sensor
         if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
-            threading.Thread(target=self.serial_io.read_value).start()
+            threading.Thread(name="serial_read", target=self.serial_io.read_value).start()
 
         if self.enabled():
             self.received_frame = frame
