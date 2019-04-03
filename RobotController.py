@@ -98,7 +98,7 @@ class RobotController:
         if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
             threading.Thread(target=self.serial_io.read_value).start()
 
-        if not self.enabled():
+        if self.enabled():
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
