@@ -39,6 +39,7 @@ class RobotController:
         self.standby_invoked = True
         self.serial_io = SerialIO('/dev/ttyACM0', 115200, self)
         self.actions = {}
+        self.watered = False
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -174,6 +175,7 @@ class RobotController:
         # Take a picture here
         plant_id = None
 
+            
         if self.current_qr_approached is not None:
             if self.current_qr_approached.startswith("gbpl:"):
                 plant_id = int(self.current_qr_approached[5:])
@@ -186,6 +188,9 @@ class RobotController:
         self.current_qr_approached = None
         try:
             if plant_id is not None:
+                if self.watered:
+                    self.actions[plant_id].remove("PLANT_WATER")
+                self.watered = False
                 self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
                 if self.actions[plant_id] == []:
                     self.actions.pop(plant_id, None)
