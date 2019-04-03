@@ -217,13 +217,13 @@ class Navigator:
         if self.is_plant_approached(plant):
 
             # Count frames to skip.
-            if self.approach_frame_counter is not 0:
-                self.remote_motor_controller.stop()
-                log.info("Potential approach, skipping this frame")
-                self.approach_frame_counter = self.approach_frame_counter - 1
-                return
-            else:
-                self.approach_frame_counter = self.approach_frame_timeout
+            # if self.approach_frame_counter is not 0:
+            #     self.remote_motor_controller.stop()
+            #     log.info("Potential approach, skipping this frame")
+            #     self.approach_frame_counter = self.approach_frame_counter - 1
+            #     return
+            # else:
+            #     self.approach_frame_counter = self.approach_frame_timeout
 
             if self.is_centered_plant(plant):
                 self.backing = False
