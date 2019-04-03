@@ -99,7 +99,10 @@ class RobotController:
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
-            log.info("\033[0;34m[Pi] Standby mode flag detected")
+            if self.standby_mode:
+                log.info("\033[0;34m[Pi] Standby mode flag detected")
+            elif len(self.actions) == 0:
+                log.info("\033[0;34m[Pi] Robot has no event left to complete")
             # Stop immediately? Wait until the jobs to finish to stop?
             if not self.approach_complete:
                 log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
@@ -137,23 +140,54 @@ class RobotController:
             log.warning("No QR found, retrying approach")
             self.retrying_approach = True
             self.navigator.remote_motor_controller.retry_approach()
+        elif self.current_qr_approached.startswith("gbpl:"):
+            # Parse the QR
+            plant_id = int(self.current_qr_approached[5:])
+            if plant_id in self.actions:
+                if len(self.actions[plant_id]) == 0:
+                    log.info("Plant {} has no task left to complete, leaving...".format(str(plant_id)))
+                    self.actions.pop(plant_id, None)
+                    self.last_qr_approached = self.current_qr_approached
+                    self.current_qr_approached = None
+                    self.navigator.remote_motor_controller.approach_escape()
+                else:
+                    self.approach_complete = False
+                    if "PLANT_WATER" in self.actions[plant_id]:
+                        self.navigator.remote_motor_controller.approached()
+                    else:
+                        self.on_approach_complete()
+            else:
+                log.info("Plant {} has no task assigned, leaving...".format(str(plant_id)))
+                self.last_qr_approached = self.current_qr_approached
+                self.current_qr_approached = None
+                self.navigator.remote_motor_controller.approach_escape()
         else:
-            # if past == current, do something here
-            self.approach_complete = False
-            self.navigator.remote_motor_controller.approached()
+            log.warning("Invalid QR code {}".format(self.current_qr_approached))
+            self.last_qr_approached = self.current_qr_approached
+            self.current_qr_approached = None
+            self.navigator.remote_motor_controller.approach_escape()
 
     def on_approach_complete(self):
         # Take a picture here
+        plant_id = None
 
         if self.current_qr_approached is not None:
             if self.current_qr_approached.startswith("gbpl:"):
-                self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]).decode("utf-8"))
+                plant_id = int(self.current_qr_approached[5:])
+                if "PLANT_CAPTURE_PHOTO" in self.actions.get(plant_id, []):
+                    self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]).decode("utf-8"))
         else:
             log.warning("[Pi] No QR code found during this approach, photo will not be sent.")
 
         self.last_qr_approached = self.current_qr_approached
         self.current_qr_approached = None
-        self.navigator.remote_motor_controller.approach_escape()
+        try:
+            if plant_id is not None:
+                self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
+                if self.actions[plant_id] == []:
+                    self.actions.pop(plant_id, None)
+        finally:
+            self.navigator.remote_motor_controller.approach_escape()
 
     def on_approach_escape_complete(self):
         self.navigator.random_search_mode = True # Flip on the random search
