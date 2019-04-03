@@ -164,7 +164,11 @@ class RobotController:
         elif self.current_qr_approached.startswith("gbpl:"):
             # Parse the QR
             plant_id = int(self.current_qr_approached[5:])
-            if plant_id in self.actions:
+            if not self.standby_invoked:
+                # If robot is not in standby mode, go forward anyways
+                self.approach_complete = False
+                self.navigator.remote_motor_controller.approached()
+            elif plant_id in self.actions:
                 if len(self.actions[plant_id]) == 0:
                     log.info("Plant {} has no task left to complete, leaving...".format(str(plant_id)))
                     self.last_qr_approached = self.current_qr_approached
@@ -197,6 +201,7 @@ class RobotController:
                 plant_id = int(self.current_qr_approached[5:])
                 if "PLANT_CAPTURE_PHOTO" in self.actions.get(plant_id, []) or not self.standby_invoked:
                     self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]).decode("utf-8"))
+                    self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
         else:
             log.warning("[Pi] No QR code found during this approach, photo will not be sent.")
 
@@ -207,7 +212,6 @@ class RobotController:
                 if self.watered:
                     self.actions[plant_id].remove("PLANT_WATER")
                 self.watered = False
-                self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
                 if self.actions[plant_id] == []:
                     self.actions.pop(plant_id, None)
         except:
