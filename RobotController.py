@@ -87,7 +87,6 @@ class RobotController:
         loop.run_until_complete(self.remote.connect())
 
     def enabled(self):
-        log.debug("self.actions: {}".format(self.actions))
         return len(self.actions) > 0 or not self.standby_mode
 
     def process_visual_data(self, predictions, frame):
@@ -108,6 +107,7 @@ class RobotController:
             threading.Thread(name="serial_read", target=self.serial_io.read_value).start()
 
         if self.enabled():
+            log.info("self.actions: {}, standby_mode: {}".format(self.actions, self.standby_mode))
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
