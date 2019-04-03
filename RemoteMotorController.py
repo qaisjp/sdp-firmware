@@ -83,7 +83,7 @@ class RemoteMotorController:
                 self.robot_controller.approach_complete = True
                 self.robot_controller.retrying_approach = True
             else:
-                self.robot_controller.watered = True
+                self.robot_controller.watered = package["watered"]
                 self.robot_controller.on_approach_complete()
         elif package["type"] == "retry_complete":
             log.error("[Pi < EV3] Retry completed.")

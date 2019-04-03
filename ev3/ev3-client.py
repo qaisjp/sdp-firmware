@@ -43,6 +43,7 @@ class EV3_Client:
         self.approach_problem = False
         self.front_sensor_value = -1
         self.back_sensor_value = -1
+        self.watered = False
 
     def generate_log(self, msg, color=LogColour.RESET):
         return color.value + msg
@@ -143,10 +144,12 @@ class EV3_Client:
                         package["approach_problem"] = True
                     else:
                         package["approach_problem"] = False
+                    package["watered"] = self.watered
                     log.info("[EV3 > Pi] Sending approach complete message, approach_problem={}.".format(str(self.approach_problem)))
                     yield from self.ws_sender.send(json.dumps(package))
                     self.approach_complete = False
                     self.approach_problem = False
+                    self.watered = False
                 if self.retry_complete:
                     package = {
                             "type": "retry_complete",
@@ -423,6 +426,7 @@ class EV3_Client:
             self.firmware.drive_backward(run_forever=False, running_speed=75, running_time=10)
 
             self.firmware.lower_arm()
+            self.watered = True
         self.approach_complete = True
 
     def retry_approach_routine(self):
