@@ -201,6 +201,10 @@ class RobotController:
         self.navigator.random_search_mode = True # Flip on the random search
         self.navigator.remote_motor_controller.random_walk()
 
+        for key in self.actions:
+            if self.actions[key] == []:
+                self.actions.pop(key, None)
+
         self.approach_complete = True
 
     def on_retry_complete(self):
