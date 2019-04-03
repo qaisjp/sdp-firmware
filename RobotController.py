@@ -207,7 +207,7 @@ class RobotController:
         non_ephemeral = []
 
         for e in events:
-            if e["ephemeral"]:
+            if e.ephemeral:
                 self.run_event(e)
             else:
                 non_ephemeral.append(e)
