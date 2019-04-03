@@ -96,6 +96,13 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
+        # If the standby is currently undergoing, but standby mode is False, stop standby mode here
+        if self.standby_invoked and not self.standby_mode:
+            self.standby_invoked = False
+            self.random_search_mode = True
+            self.navigator.remote_motor_controller.random()
+            self.standby_invoked = False
+
         # If the sensor's last read time is long enough (1 hour), attempt to read the sensor
         if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
             threading.Thread(name="serial_read", target=self.serial_io.read_value).start()
@@ -246,7 +253,6 @@ class RobotController:
         if not justMove:
             # Turn off standby mode
             self.standby_mode = False
-            self.standby_invoked = False
 
 
 def main():
