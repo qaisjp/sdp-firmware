@@ -159,7 +159,7 @@ class RobotController:
                     if "PLANT_WATER" in self.actions[plant_id]:
                         self.navigator.remote_motor_controller.approached()
                     else:
-                        self.on_approach_complete()
+                        self.navigator.remote_motor_controller.approached(raise_arm=False)
             else:
                 log.info("Plant {} has no task assigned, leaving...".format(str(plant_id)))
                 self.last_qr_approached = self.current_qr_approached

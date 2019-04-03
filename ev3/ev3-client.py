@@ -186,7 +186,7 @@ class EV3_Client:
             self.stop_now = True
             self.firmware.stop()
             self.turn_issued = True # Set this flag to true to ignore most messages
-            self.approached_routine() # Do approach routines
+            self.approached_routine(package["raise_arm"]) # Do approach routines
             self.turn_issued = False
 
         elif action == "retry_approach":
@@ -395,33 +395,34 @@ class EV3_Client:
                     break
 
     # Invoked when the plant is reached - turn, extend arms, etc.
-    def approached_routine(self):
-        self.firmware.raise_arm()
-        approach_start = time.time()
-        while time.time() - approach_start < 10:
-            if self.front_sensor_value < 75 and self.front_sensor_value > 50:
+    def approached_routine(self, raise_arm=True):
+        if raise_arm:
+            self.firmware.raise_arm()
+            approach_start = time.time()
+            while time.time() - approach_start < 10:
+                if self.front_sensor_value < 75 and self.front_sensor_value > 50:
+                    self.firmware.stop()
+                    break
+                elif self.front_sensor_value < 50:
+                    self.firmware.drive_backward(running_speed=75)
+                else:
+                    self.firmware.drive_forward(running_speed=75)
+
+            if time.time() - approach_start > 10:
+                log.info("Approach timeout, retreat.")
                 self.firmware.stop()
-                break
-            elif self.front_sensor_value < 50:
-                self.firmware.drive_backward(running_speed=75)
-            else:
-                self.firmware.drive_forward(running_speed=75)
+                self.firmware.lower_arm()
+                self.retry_approach_routine()
+                self.approach_complete = True
+                self.approach_problem = True
+                return
 
-        if time.time() - approach_start > 10:
-            log.info("Approach timeout, retreat.")
-            self.firmware.stop()
+            self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
+            time.sleep(5)
+
+            self.firmware.drive_backward(run_forever=False, running_speed=75, running_time=10)
+
             self.firmware.lower_arm()
-            self.retry_approach_routine()
-            self.approach_complete = True
-            self.approach_problem = True
-            return
-
-        self.firmware.right_side_turn(run_by_deg=True, turn_degree=15, run_forever=False, running_speed=75)
-        time.sleep(5)
-
-        self.firmware.drive_backward(run_forever=False, running_speed=75, running_time=10)
-
-        self.firmware.lower_arm()
         self.approach_complete = True
 
     def retry_approach_routine(self):

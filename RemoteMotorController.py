@@ -171,9 +171,10 @@ class RemoteMotorController:
         self.message = json.dumps(package)
         time.sleep(1)
 
-    def approached(self):
+    def approached(self, raise_arm=True):
         # log.info("Plant approached.")
         package = self.generate_action_package("approached")
+        package["raise_arm"] = raise_arm
         self.message = json.dumps(package)
         time.sleep(1)
 
