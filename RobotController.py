@@ -201,7 +201,6 @@ class RobotController:
                 plant_id = int(self.current_qr_approached[5:])
                 if "PLANT_CAPTURE_PHOTO" in self.actions.get(plant_id, []) or not self.standby_invoked:
                     self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]).decode("utf-8"))
-                    self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
         else:
             log.warning("[Pi] No QR code found during this approach, photo will not be sent.")
 
@@ -214,6 +213,7 @@ class RobotController:
                 self.watered = False
                 if self.actions[plant_id] == []:
                     self.actions.pop(plant_id, None)
+                self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
         except:
             pass
         finally:
