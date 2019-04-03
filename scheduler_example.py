@@ -2,6 +2,8 @@ import asyncio
 from scheduler import Scheduler, Event, Action, ActionName
 from dateutil.rrule import rrule, SECONDLY
 from datetime import datetime, timedelta
+import logging as log
+import sys
 
 
 def check_24_hours():
@@ -36,5 +38,7 @@ def run():
 
 
 if __name__ == "__main__":
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s",
+                    level=log.INFO, stream=sys.stdout)
     run()
     print("Completed!")
