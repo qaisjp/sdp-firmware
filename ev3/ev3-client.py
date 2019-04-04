@@ -288,12 +288,14 @@ class EV3_Client:
         elif action == "arm_up":
             if self.arm_operated:
                 log.info("Skipping {} as arm is already in operation".format(action))
+                return
             self.arm_operated = True
             self.firmware.raise_arm()
             self.arm_operated = False
         elif action == "arm_down":
             if self.arm_operated:
                 log.info("Skipping {} as arm is already in operation".format(action))
+                return
             self.arm_operated = True
             self.firmware.lower_arm()
             self.arm_operated = False
