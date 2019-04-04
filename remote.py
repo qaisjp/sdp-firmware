@@ -68,6 +68,7 @@ class Remote(object):
 
         while True:
             message = yield from self.ws.recv()
+            log.debug("[REMOTE] message received {}".format(message))
             result = json.loads(message)
 
             type = RPCType(result['type'])
