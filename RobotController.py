@@ -38,6 +38,8 @@ class RobotController:
         self.standby_mode = True
         self.standby_invoked = True
         self.serial_io = SerialIO('/dev/ttyACM0', 115200, self)
+        self.actions = {}
+        self.watered = False
 
         if config.RESPOND_TO_API:
             host = config.API_HOST
@@ -55,23 +57,45 @@ class RobotController:
                 RPCType.SET_STANDBY, self.set_standby)
 
             rm_thread = threading.Thread(target=self.thread_remote,
-                                         daemon=True)
+                                         name="remote", daemon=True)
             rm_thread.start()
             # rm_thread.join()
 
         # Create the navigation system
         self.navigator = Navigator(self, verbose=True)
 
-        threading.Thread(target=self.vision.start).start()
+        threading.Thread(target=self.vision.start, name="vision").start()
 
     def remote_move(self, direction):
         self.navigator.remote_move(direction)
 
+    def run_event(self, event):
+        if self.standby_mode and len(self.actions.keys()) == 0:
+            self.set_standby(False, justMove=True)
+        for action in event.actions:
+            pid = action["plant_id"]
+            if pid not in self.actions:
+                self.actions[pid] = []
+
+            self.actions[pid].append(action["name"])
+
     def thread_remote(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        # self.sched = Scheduler()
+        self.sched = Scheduler()
+        self.sched.run_event_cb = self.run_event
         loop.run_until_complete(self.remote.connect())
+
+    def enabled(self):
+        return len(self.actions) > 0 or not self.standby_mode
+    
+    def clean_actions(self):
+        new_actions = {}
+        for key in self.actions:
+            if self.actions[key] != []:
+                new_actions[key] = self.actions[key]
+
+        self.actions = new_actions
 
     def process_visual_data(self, predictions, frame):
         """
@@ -79,30 +103,42 @@ class RobotController:
         :param predictions:     List of predictions produced by the VPU
         :return:
         """
+        # If the standby is currently undergoing, but standby mode is False, stop standby mode here
+        if self.standby_invoked and not self.standby_mode:
+            self.standby_invoked = False
+            self.random_search_mode = True
+            self.navigator.remote_motor_controller.random()
+            self.standby_invoked = False
+
         # If the sensor's last read time is long enough (1 hour), attempt to read the sensor
         if time.time() - self.serial_io.sensor_last_read > 3600 and not self.serial_io.value_reading:
-            threading.Thread(target=self.serial_io.read_value).start()
+            threading.Thread(name="serial_read", target=self.serial_io.read_value).start()
 
-        if not self.standby_mode:
+        if self.enabled():
+            log.info("self.actions: {}, standby_mode: {}".format(self.actions, self.standby_mode))
+            self.clean_actions()
             self.received_frame = frame
             self.navigator.on_new_frame(predictions)
         else:
-            log.info("\033[0;34m[Pi] Standby mode flag detected")
+            if self.standby_mode:
+                log.info("\033[0;34m[Pi] Standby mode flag detected")
+                if not self.approach_complete:
+                    log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
+                elif self.retrying_approach:
+                    log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
+                else:
+                    if not self.standby_invoked:
+                        self.navigator.remote_motor_controller.stop()
+                        log.info("\033[1;37;44m[Pi] Invoking standby mode")
+                        # Any other switches to flip?
+                        # Reset read QR codes
+                        self.current_qr_approached = None
+                        self.last_qr_approached = None
+                        # Stop the motor
+                        self.standby_invoked = True
+            elif len(self.actions) == 0:
+                log.info("\033[0;34m[Pi] Robot has no event left to complete")
             # Stop immediately? Wait until the jobs to finish to stop?
-            if not self.approach_complete:
-                log.info("\033[1;37;44m[Pi] Robot approaching, ignoring flag")
-            elif self.retrying_approach:
-                log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
-            else:
-                if not self.standby_invoked:
-                    log.info("\033[1;37;44m[Pi] Invoking standby mode")
-                    # Any other switches to flip?
-                    # Reset read QR codes
-                    self.current_qr_approached = None
-                    self.last_qr_approached = None
-                    # Stop the motor
-                    self.navigator.remote_motor_controller.stop()
-                    self.standby_invoked = True
 
 
     def read_qr_code(self):
@@ -125,28 +161,68 @@ class RobotController:
             log.warning("No QR found, retrying approach")
             self.retrying_approach = True
             self.navigator.remote_motor_controller.retry_approach()
+        elif self.current_qr_approached.startswith("gbpl:"):
+            # Parse the QR
+            plant_id = int(self.current_qr_approached[5:])
+            if not self.standby_invoked:
+                # If robot is not in standby mode, go forward anyways
+                self.approach_complete = False
+                self.navigator.remote_motor_controller.approached()
+            elif plant_id in self.actions:
+                if len(self.actions[plant_id]) == 0:
+                    log.info("Plant {} has no task left to complete, leaving...".format(str(plant_id)))
+                    self.last_qr_approached = self.current_qr_approached
+                    self.current_qr_approached = None
+                    self.navigator.remote_motor_controller.approach_escape()
+                else:
+                    self.approach_complete = False
+                    if "PLANT_WATER" in self.actions[plant_id] or not self.standby_invoked:
+                        self.navigator.remote_motor_controller.approached()
+                    else:
+                        self.navigator.remote_motor_controller.approached(raise_arm=False)
+            else:
+                log.info("Plant {} has no task assigned, leaving...".format(str(plant_id)))
+                self.last_qr_approached = self.current_qr_approached
+                self.current_qr_approached = None
+                self.navigator.remote_motor_controller.approach_escape()
         else:
-            # if past == current, do something here
-            self.approach_complete = False
-            self.navigator.remote_motor_controller.approached()
+            log.warning("Invalid QR code {}".format(self.current_qr_approached))
+            self.last_qr_approached = self.current_qr_approached
+            self.current_qr_approached = None
+            self.navigator.remote_motor_controller.approach_escape()
 
     def on_approach_complete(self):
         # Take a picture here
+        plant_id = None
 
+            
         if self.current_qr_approached is not None:
             if self.current_qr_approached.startswith("gbpl:"):
-                self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]).decode("utf-8"))
+                plant_id = int(self.current_qr_approached[5:])
+                if "PLANT_CAPTURE_PHOTO" in self.actions.get(plant_id, []) or not self.standby_invoked:
+                    self.remote.plant_capture_photo(int(self.current_qr_approached[5:]), base64.b64encode(cv2.imencode(".jpg", self.received_frame)[1]).decode("utf-8"))
         else:
             log.warning("[Pi] No QR code found during this approach, photo will not be sent.")
 
         self.last_qr_approached = self.current_qr_approached
         self.current_qr_approached = None
-        self.navigator.remote_motor_controller.approach_escape()
+        try:
+            if plant_id is not None:
+                if self.watered:
+                    self.actions[plant_id].remove("PLANT_WATER")
+                self.watered = False
+                if self.actions[plant_id] == []:
+                    self.actions.pop(plant_id, None)
+                self.actions[plant_id].remove("PLANT_CAPTURE_PHOTO")
+        except:
+            pass
+        finally:
+            self.navigator.remote_motor_controller.approach_escape()
 
     def on_approach_escape_complete(self):
         self.navigator.random_search_mode = True # Flip on the random search
         self.navigator.remote_motor_controller.random_walk()
-
+        self.clean_actions()
         self.approach_complete = True
 
     def on_retry_complete(self):
@@ -157,12 +233,24 @@ class RobotController:
         pass
 
     def on_events_received(self, data):
-        # self.sched.push_events(list(map(Event.from_dict, data)))
+        events = list(map(Event.from_dict, data))
+        non_ephemeral = []
+
+        for e in events:
+            if e.ephemeral:
+                self.run_event(e)
+            else:
+                non_ephemeral.append(e)
+
+        self.sched.push_events(non_ephemeral)
         pass
 
-    def set_standby(self, mode):
+    def set_standby(self, mode, justMove=False):
         if mode:
             self.standby_mode = True
+            while not hasattr(self, "navigator"):
+                pass
+            self.navigator.remote_motor_controller.stop()
             return
 
         while not hasattr(self, "navigator"):
@@ -172,10 +260,19 @@ class RobotController:
         self.navigator.random_search_mode = True
         self.navigator.remote_motor_controller.random_walk()
 
-        # Turn off standby mode
-        self.standby_mode = False
-        self.standby_invoked = False
+        if not justMove:
+            # Turn off standby mode
+            self.standby_mode = False
 
+    def get_state(self):
+        if self.standby_mode:
+            return "Standby Mode"
+        elif self.navigator.get_random_search_mode():
+            return "Random Search Mode"
+        elif self.navigator.get_follow_mode():
+            return "Follow Mode"
+        elif self.navigator.get_escape_mode():
+            return "Escape Mode"
 
 def main():
     if os.getenv("http_proxy") is not None:

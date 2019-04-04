@@ -6,6 +6,9 @@ import sys
 import math
 import base64
 import threading
+import datetime
+import numpy as np
+import asyncio
 
 from openvino.inference_engine import IENetwork, IEPlugin
 from websocket import create_connection
@@ -13,7 +16,15 @@ from imutils.video import FPS
 
 
 class Vision:
-    def __init__(self, model_xml, model_bin, robot_controller, is_headless, live_stream, confidence_interval):
+    def __init__(self,
+                model_xml,
+                model_bin,
+                robot_controller,
+                is_headless = True,
+                live_stream = True,
+                confidence_interval = 0.5,
+                draw_alignment_info = False,
+                save_video = False):
         """
         Vision class constructor.
         :param model_xml:           Network topology
@@ -33,6 +44,8 @@ class Vision:
         self.confidence_interval = confidence_interval
         self.live_stream = live_stream
         self.robot_controller = robot_controller
+        self.draw_alignment_info = draw_alignment_info
+        self.save_video = save_video
 
         # Initialize plugin
         log.info("Initializing plugin for MYRIAD X VPU...")
@@ -77,6 +90,7 @@ class Vision:
         Starts video capture and performs inference using MYRIAD X VPU
         :return:
         """
+        asyncio.set_event_loop(asyncio.new_event_loop())
         self.fps.start()
 
         log.info("Starting video stream. Press ESC to stop.")
@@ -156,6 +170,8 @@ class Vision:
         :param frame:   Frame to be processed
         :return:
         """
+        self.draw_info(frame)
+
         # Send frame if specified
         if self.live_stream:
             log.info("Sending frame...")
@@ -170,8 +186,46 @@ class Vision:
             render_end = time.time()
             self.render_time = render_end - render_start
 
-    @staticmethod
-    def visualise_prediction(frame, pred_boxpts, label, prob):
+        if self.save_video:
+            cv2.imwrite("/home/student/capture/frame_"+str(self.frame_counter)+".jpg", frame)
+            self.frame_counter = self.frame_counter + 1
+
+    def draw_info(self, frame):
+        now = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        state = self.robot_controller.get_state()
+
+        # Draw title/logo
+        cv2.putText(frame,
+                    "GrowBot Vision System",
+                    (25, 25),
+                    cv2.FONT_HERSHEY_DUPLEX,
+                    .75,
+                    (0, 150, 0),
+                    1,
+                    cv2.LINE_AA)
+
+        # Draw current date
+        cv2.putText(frame,
+                    now,
+                    (25, 50),
+                    cv2.FONT_HERSHEY_DUPLEX,
+                    .5,
+                    (0, 150, 0),
+                    1,
+                    cv2.LINE_AA)
+
+        # Draw state
+        cv2.putText(frame,
+                    state,
+                    (25, 75),
+                    cv2.FONT_HERSHEY_DUPLEX,
+                    .5,
+                    (0, 150, 0),
+                    1,
+                    cv2.LINE_AA)
+
+
+    def visualise_prediction(self, frame, pred_boxpts, label, prob):
         """
         Draws bounding box and class probability around prediction.
         :param frame:       Frame that contains prediction
@@ -186,10 +240,37 @@ class Vision:
         cv2.putText(frame,
                     label + ' ' + str(round(prob * 100, 1)) + ' %',
                     (pred_boxpts[0][0], pred_boxpts[0][1] - 7),
-                    cv2.FONT_HERSHEY_COMPLEX,
+                    cv2.FONT_HERSHEY_DUPLEX,
                     0.5,
                     color,
                     1)
+
+        if self.draw_alignment_info:
+            # Draw triangle in the centre of the frame.
+            frame_centre = 320
+
+            pts_centre = np.array([[frame_centre - 10, 480],
+                                    [frame_centre, 430],
+                                    [frame_centre + 10, 480]],
+                                    np.int32).reshape((-1, 1, 2))
+            cv2.polylines(frame,[pts_centre],True,(255,0,0))
+
+            if label is "Plant":
+                # Draw triangle indicating midpoint of the bounding box.
+                ((xmin, ymin), (xmax, ymax)) = pred_boxpts
+
+                midpoint = (xmax + xmin) / 2
+
+                pts_bb_midpoint = np.array([[midpoint - 10, 480],
+                                            [midpoint, 430],
+                                            [midpoint + 10, 480]],
+                                            np.int32).reshape((-1, 1, 2))
+                cv2.polylines(frame,[pts_bb_midpoint],True,(0,255,0))
+
+                # Draw centre acceptance interval.
+                delta = int(6 / (((xmax - xmin) * (ymax - ymin)) / (640*480)))
+                cv2.rectangle(frame, (320-delta, 0), (320+delta, 480), (153,255,255), 1)
+
 
     def process_prediction(self, frame, prediction):
         """

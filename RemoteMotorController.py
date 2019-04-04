@@ -83,6 +83,7 @@ class RemoteMotorController:
                 self.robot_controller.approach_complete = True
                 self.robot_controller.retrying_approach = True
             else:
+                self.robot_controller.watered = package["watered"]
                 self.robot_controller.on_approach_complete()
         elif package["type"] == "retry_complete":
             log.error("[Pi < EV3] Retry completed.")
@@ -170,9 +171,10 @@ class RemoteMotorController:
         self.message = json.dumps(package)
         time.sleep(1)
 
-    def approached(self):
+    def approached(self, raise_arm=True):
         # log.info("Plant approached.")
         package = self.generate_action_package("approached")
+        package["raise_arm"] = raise_arm
         self.message = json.dumps(package)
         time.sleep(1)
 
@@ -184,5 +186,15 @@ class RemoteMotorController:
     def random(self):
         # log.info("Triggering random walk.")
         package = self.generate_action_package("random")
+        self.message = json.dumps(package)
+        time.sleep(1)
+    
+    def arm_up(self):
+        package = self.generate_action_package("arm_up")
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def arm_down(self):
+        package = self.generate_action_package("arm_down")
         self.message = json.dumps(package)
         time.sleep(1)
