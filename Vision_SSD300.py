@@ -47,6 +47,8 @@ class Vision:
         self.draw_alignment_info = draw_alignment_info
         self.save_video = save_video
 
+        self.frame_counter = 0
+
         # Initialize plugin
         log.info("Initializing plugin for MYRIAD X VPU...")
         self.plugin = IEPlugin(device='MYRIAD')
@@ -187,7 +189,8 @@ class Vision:
             self.render_time = render_end - render_start
 
         if self.save_video:
-            cv2.imwrite("/home/student/capture/frame_"+str(self.frame_counter)+".jpg", frame)
+            n = str(self.frame_counter).zfill(10)
+            cv2.imwrite("/home/student/capture/frame_"+n+".jpg", frame)
             self.frame_counter = self.frame_counter + 1
 
     def draw_info(self, frame):
