@@ -264,6 +264,15 @@ class RobotController:
             # Turn off standby mode
             self.standby_mode = False
 
+    def get_state(self):
+        if self.standby_mode:
+            return "Standby Mode"
+        elif self.navigator.get_random_search_mode():
+            return "Random Search Mode"
+        elif self.navigator.get_follow_mode():
+            return "Follow Mode"
+        elif self.navigator.get_escape_mode():
+            return "Escape Mode"
 
 def main():
     if os.getenv("http_proxy") is not None:

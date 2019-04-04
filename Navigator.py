@@ -4,7 +4,6 @@ import sys
 import threading
 import asyncio
 import time
-import pickle
 
 class Navigator:
     """
@@ -75,14 +74,7 @@ class Navigator:
 
         self.remote_motor_controller = RemoteMotorController(self.robot_controller)
         self.backing = False
-
-        # Load angle approximation model.
-        with open("k2_model.pkl", "rb") as input_file:
-            self.angle_model = pickle.load(input_file)
-
-        # Arm status
-        self.arm_up = False
-
+        
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
         ws_sender_thread = threading.Thread(name="ws_sender", target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
@@ -219,6 +211,10 @@ class Navigator:
 
         if self.is_plant_approached(plant):
 
+            # Save bb area.
+            with open("/home/student/bbarea.txt", "a") as myfile:
+                myfile.write(str(self.get_bb_area(plant))+"\n")
+
             # Count frames to skip.
             # if self.approach_frame_counter is not 0:
             #     self.remote_motor_controller.stop()
@@ -333,7 +329,8 @@ class Navigator:
         :param plant:
         :return:
         """
-        delta = self.get_dynamic_delta(plant)
+        delta = min(self.get_dynamic_delta(plant), 160)
+        log.info("Acceptance interval: {}".format(delta))
 
         left = self.frame_midpoint - delta
         right = self.frame_midpoint + delta
@@ -373,6 +370,15 @@ class Navigator:
         """
         return self.constant_delta / (self.get_bb_area(plant) / self.frame_area)
 
+    def get_random_search_mode(self):
+        return self.random_search_mode
+
+    def get_follow_mode(self):
+        return self.follow_mode
+
+    def get_escape_mode(self):
+        return self.escape_mode
+
     def remote_move(self, direction):
         if direction == "forward":
             self.remote_motor_controller.go_forward()
@@ -385,7 +391,6 @@ class Navigator:
         elif direction == "brake":
             self.remote_motor_controller.stop()
         elif direction == "armup":
-            self.remote_motor_controller.arm_up()
         elif direction == "armdown":
             self.remote_motor_controller.arm_down()
         else:
