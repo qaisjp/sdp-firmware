@@ -74,15 +74,15 @@ class Navigator:
 
         self.remote_motor_controller = RemoteMotorController(self.robot_controller)
         self.backing = False
-
+        
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
-        ws_sender_thread = threading.Thread(target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
+        ws_sender_thread = threading.Thread(name="ws_sender", target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
         ws_sender_thread.setDaemon(True)
         ws_sender_thread.start()
 
         ws_receiver_loop = asyncio.new_event_loop()
-        ws_receiver_thread = threading.Thread(target=self.receiver_action, args=(self.remote_motor_controller, ws_receiver_loop,))
+        ws_receiver_thread = threading.Thread(name="ws_receiver", target=self.receiver_action, args=(self.remote_motor_controller, ws_receiver_loop,))
         ws_receiver_thread.setDaemon(True)
         ws_receiver_thread.start()
 
@@ -391,8 +391,7 @@ class Navigator:
         elif direction == "brake":
             self.remote_motor_controller.stop()
         elif direction == "armup":
-            print('armup')
         elif direction == "armdown":
-            print('armdown')
+            self.remote_motor_controller.arm_down()
         else:
             print("Unknown direction received")
