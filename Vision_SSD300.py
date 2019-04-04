@@ -167,6 +167,8 @@ class Vision:
         :param frame:   Frame to be processed
         :return:
         """
+        self.draw_info(frame)
+
         # Send frame if specified
         if self.live_stream:
             log.info("Sending frame...")
@@ -184,8 +186,6 @@ class Vision:
         if self.save_video:
             cv2.imwrite("/home/student/capture/frame_"+str(self.frame_counter)+".jpg", frame)
             self.frame_counter = self.frame_counter + 1
-
-        self.draw_info(frame)
 
     def draw_info(self, frame):
         now = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
@@ -222,9 +222,7 @@ class Vision:
                     cv2.LINE_AA)
 
 
-
-    @staticmethod
-    def visualise_prediction(frame, pred_boxpts, label, prob):
+    def visualise_prediction(self, frame, pred_boxpts, label, prob):
         """
         Draws bounding box and class probability around prediction.
         :param frame:       Frame that contains prediction
