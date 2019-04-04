@@ -282,7 +282,7 @@ def main():
         print("Use start.sh. Do not run this Python file yourself.")
         return
 
-    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s\033[0m", level=log.INFO, stream=sys.stdout)
+    log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s\033[0m", level=log.DEBUG, stream=sys.stdout)
     RobotController()
 
 
