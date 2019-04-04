@@ -7,6 +7,7 @@ import math
 import base64
 import threading
 import datetime
+import numpy as np
 
 from openvino.inference_engine import IENetwork, IEPlugin
 from websocket import create_connection
