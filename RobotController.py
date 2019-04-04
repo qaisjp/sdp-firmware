@@ -180,7 +180,7 @@ class RobotController:
         if self.standby_mode:
             return "Standby Mode"
         elif self.navigator.get_random_search_mode():
-            return "Random Random Search Mode"
+            return "Random Search Mode"
         elif self.navigator.get_follow_mode():
             return "Follow Mode"
         elif self.navigator.get_escape_mode():
