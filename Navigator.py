@@ -385,16 +385,8 @@ class Navigator:
         elif direction == "brake":
             self.remote_motor_controller.stop()
         elif direction == "armup":
-            if not self.arm_up:
-                self.remote_motor_controller.arm_up()
-                self.arm_up = True
-            else:
-                log.warn("Arm already in up position")
+            self.remote_motor_controller.arm_up()
         elif direction == "armdown":
-            if self.arm_up:
-                self.remote_motor_controller.arm_down()
-                self.arm_up = False
-            else:
-                log.warn("Arm already in down position")
+            self.remote_motor_controller.arm_down()
         else:
             print("Unknown direction received")

@@ -45,6 +45,7 @@ class EV3_Client:
         self.back_sensor_value = -1
         self.watered = False
         self.arm_operated = False
+        self.arm_up = False
 
     def generate_log(self, msg, color=LogColour.RESET):
         return color.value + msg
@@ -289,16 +290,24 @@ class EV3_Client:
             if self.arm_operated:
                 log.info("Skipping {} as arm is already in operation".format(action))
                 return
+            if self.arm_up:
+                log.warn("Arm already in up position, skipping")
+                return
             self.arm_operated = True
             self.firmware.raise_arm()
             self.arm_operated = False
+            self.arm_up = True
         elif action == "arm_down":
             if self.arm_operated:
                 log.info("Skipping {} as arm is already in operation".format(action))
                 return
+            if not self.arm_up:
+                log.warn("Arm already in down position, skipping")
+                return
             self.arm_operated = True
             self.firmware.lower_arm()
             self.arm_operated = False
+            self.arm_up = False
         else:
             log.info("Invalid command.")
             self.firmware.stop()
