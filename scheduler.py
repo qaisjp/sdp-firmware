@@ -8,6 +8,7 @@ import pickle
 import warnings
 import os.path
 import asyncio
+import threading
 
 
 def datetime_sleep(dt: datetime):
@@ -138,6 +139,10 @@ class Scheduler():
 
         self.reload()
 
+    def __run_event(self, event):
+        log.info("[SCHED] Event callback is being triggered: {}".format(event))
+        self.run_event_cb(event)
+
     def reload(self):
         """Deletes all events and reloads them.
 
@@ -147,7 +152,7 @@ class Scheduler():
         This will allow all future events to be perpetually scheduled,
         but without murdering time.sleep.
         """
-        log.info("[SCHED] Reloading...")
+        log.info("[SCHED] Reloading on thread {}...".format(threading.current_thread().name))
 
         # Clear the backing sched
         list(map(self._sched.cancel, self._sched.queue))
@@ -160,7 +165,7 @@ class Scheduler():
         max_dt = min_dt + self.reload_freq
         for event in self.__events:
             for t in event.find_instances(after=min_dt, before=max_dt):
-                self._sched.enterabs(t.replace(tzinfo=None), 0, lambda: self.run_event_cb(event))
+                self._sched.enterabs(t.replace(tzinfo=None), 0, lambda: self.__run_event(event))
 
         # Schedule a self reload after all events have elapsed
         self._sched.enterabs(max_dt, 1, self.reload)
