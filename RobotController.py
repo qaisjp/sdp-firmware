@@ -56,15 +56,14 @@ class RobotController:
             self.remote.add_callback(
                 RPCType.SET_STANDBY, self.set_standby)
 
-            sched_thread = threading.Thread(target=self.thread_sched,
-                                            name="sched", daemon=True)
-            sched_thread.start()
-
             rm_thread = threading.Thread(target=self.thread_remote,
                                          name="remote", daemon=True)
             rm_thread.start()
             # rm_thread.join()
 
+            sched_thread = threading.Thread(target=self.thread_sched,
+                                            name="sched", daemon=True)
+            sched_thread.start()
 
         # Create the navigation system
         self.navigator = Navigator(self, verbose=True)
