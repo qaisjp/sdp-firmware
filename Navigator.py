@@ -38,7 +38,7 @@ class Navigator:
                                         next one
         :param verbose:                 Verbosity flag
         """
-        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        # log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
         self.robot_controller = robot_controller
         self.obstacle_threshold = obstacle_threshold
@@ -305,7 +305,7 @@ class Navigator:
             sensor_flag = True
 
         return sensor_flag
-    
+
     def get_bb_area(self, prediction):
         """
         Computes bounding box area.

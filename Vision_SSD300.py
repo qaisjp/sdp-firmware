@@ -34,7 +34,7 @@ class Vision:
         :param confidence_interval: Confidence interval for predictions. Only predictions above this value will be
                                     processed
         """
-        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        # log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
         log.info("Instantiating Vision class...")
 
         # Websocket endpoint for live streaming

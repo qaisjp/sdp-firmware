@@ -11,7 +11,7 @@ from remote import Remote, LogSeverity, LogType
 
 class RemoteMotorController:
     def __init__(self, robot_controller, address="localhost"):
-        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        # log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
         self.robot_controller = robot_controller
         self.address_nr = address
         self.ws_receiver = None
@@ -63,10 +63,10 @@ class RemoteMotorController:
                 self.front_sensor_value = [2550, 2550, 2550, 2550]
             if self.back_sensor_value is None:
                 self.back_sensor_value = [2550, 2550, 2550, 2550]
-            
+
             self.front_sensor_value = self.front_sensor_value[1:]
             self.back_sensor_value = self.back_sensor_value[1:]
-            
+
             self.front_sensor_value.append(int(package["front_sensor"]))
             self.back_sensor_value.append((package["back_sensor"]))
         elif package["type"] == "init":
@@ -194,7 +194,7 @@ class RemoteMotorController:
         package = self.generate_action_package("random")
         self.message = json.dumps(package)
         time.sleep(1)
-    
+
     def arm_up(self):
         package = self.generate_action_package("arm_up")
         self.message = json.dumps(package)

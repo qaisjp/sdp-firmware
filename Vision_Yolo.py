@@ -161,7 +161,7 @@ class Vision:
         :param is_headless:     If true, system will operate in headless mode, otherwise the frames will be displayed
                                 on the screen
         """
-        log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+        # log.basicConfig(format="[ %(asctime)s ] [ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
         self.is_headless = is_headless
         self.prob_threshold = prob_threshold
