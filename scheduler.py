@@ -46,7 +46,7 @@ class Event():
         e.event_id = dict['id']
         e.recurrences = dict['recurrences']
         e.actions = dict['actions']
-        e.ephemeral = dict['ephemeral']
+        e.ephemeral = dict.get('ephemeral', False)
         return e
 
     def __str__(self):
