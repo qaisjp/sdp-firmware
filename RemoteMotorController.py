@@ -188,3 +188,13 @@ class RemoteMotorController:
         package = self.generate_action_package("random")
         self.message = json.dumps(package)
         time.sleep(1)
+    
+    def arm_up(self):
+        package = self.generate_action_package("arm_up")
+        self.message = json.dumps(package)
+        time.sleep(1)
+
+    def arm_down(self):
+        package = self.generate_action_package("arm_down")
+        self.message = json.dumps(package)
+        time.sleep(1)

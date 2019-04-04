@@ -44,6 +44,7 @@ class EV3_Client:
         self.front_sensor_value = -1
         self.back_sensor_value = -1
         self.watered = False
+        self.arm_operated = False
 
     def generate_log(self, msg, color=LogColour.RESET):
         return color.value + msg
@@ -284,6 +285,18 @@ class EV3_Client:
                 self.random_movement()
                 self.random_issued = False
             self.stop_now = False
+        elif action == "arm_up":
+            if self.arm_operated:
+                log.info("Skipping {} as arm is already in operation".format(action))
+            self.arm_operated = True
+            self.firmware.raise_arm()
+            self.arm_operated = False
+        elif action == "arm_down":
+            if self.arm_operated:
+                log.info("Skipping {} as arm is already in operation".format(action))
+            self.arm_operated = True
+            self.firmware.lower_arm()
+            self.arm_operated = False
         else:
             log.info("Invalid command.")
             self.firmware.stop()
