@@ -391,6 +391,7 @@ class Navigator:
         elif direction == "brake":
             self.remote_motor_controller.stop()
         elif direction == "armup":
+            self.remote_motor_controller.arm_up()
         elif direction == "armdown":
             self.remote_motor_controller.arm_down()
         else:
