@@ -24,7 +24,7 @@ class Vision:
                 live_stream = True,
                 confidence_interval = 0.5,
                 draw_alignment_info = True,
-                save_video = False):
+                save_video = True):
         """
         Vision class constructor.
         :param model_xml:           Network topology
