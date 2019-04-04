@@ -1,5 +1,5 @@
 import asyncio
-from scheduler import Scheduler, Event, Action, ActionName
+from scheduler import Scheduler, Event
 from dateutil.rrule import rrule, SECONDLY
 from datetime import datetime, timedelta
 import logging as log
@@ -14,16 +14,13 @@ def check_24_hours():
     rule1 = rrule(freq=SECONDLY, interval=5, dtstart=datetime.now(), count=60)
     rule2 = rrule(freq=SECONDLY, interval=9, dtstart=datetime.now(), count=60)
 
-    a1 = Action(ActionName.PLANT_CAPTURE_PHOTO, 5)
-    a2 = Action(ActionName.PLANT_WATER, 9)
-
     e1 = Event()
     e1.recurrences = [str(rule1)]
-    e1.actions = [a1]
+    e1.actions = [{"name": "action for event 1"}]
 
     e2 = Event()
     e2.recurrences = [str(rule2)]
-    e2.actions = [a2]
+    e2.actions = [{"name": "action for event 2"}]
     # EXAMPLE DOWNLOAD END
 
     s.push_events([e1, e2])
