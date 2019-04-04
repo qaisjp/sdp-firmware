@@ -23,7 +23,7 @@ class Vision:
                 is_headless = True,
                 live_stream = True,
                 confidence_interval = 0.5,
-                draw_alignment_info = False,
+                draw_alignment_info = True,
                 save_video = False):
         """
         Vision class constructor.

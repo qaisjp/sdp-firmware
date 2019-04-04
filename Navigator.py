@@ -74,7 +74,7 @@ class Navigator:
 
         self.remote_motor_controller = RemoteMotorController(self.robot_controller)
         self.backing = False
-        
+
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
         ws_sender_thread = threading.Thread(name="ws_sender", target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
@@ -329,7 +329,7 @@ class Navigator:
         :param plant:
         :return:
         """
-        delta = min(self.get_dynamic_delta(plant), 160)
+        delta = min(self.get_dynamic_delta(plant), 120)
         log.info("Acceptance interval: {}".format(delta))
 
         left = self.frame_midpoint - delta
