@@ -309,10 +309,8 @@ class Navigator:
         if sensor_count > 0 and sensor_sum / sensor_count < 450:
             sensor_flag = True
 
-        vision_flag = (self.get_bb_area(plant) / self.frame_area) > self.plant_approach_threshold
-
-        return sensor_flag or vision_flag
-
+        return sensor_flag
+    
     def get_bb_area(self, prediction):
         """
         Computes bounding box area.
