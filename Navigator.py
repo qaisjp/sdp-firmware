@@ -330,6 +330,7 @@ class Navigator:
         :return:
         """
         delta = min(self.get_dynamic_delta(plant), 160)
+        log.info("Acceptance interval: {}".format(delta))
 
         left = self.frame_midpoint - delta
         right = self.frame_midpoint + delta
