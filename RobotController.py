@@ -127,8 +127,8 @@ class RobotController:
                 elif self.retrying_approach:
                     log.info("\033[1;37;44m[Pi] Robot retrying approach, ignoring flag")
                 else:
-                    self.navigator.remote_motor_controller.stop()
                     if not self.standby_invoked:
+                        self.navigator.remote_motor_controller.stop()
                         log.info("\033[1;37;44m[Pi] Invoking standby mode")
                         # Any other switches to flip?
                         # Reset read QR codes
