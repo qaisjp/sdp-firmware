@@ -320,9 +320,9 @@ class EV3_Client:
                 turn_left = random.random() # Decide a direction to turn
                 # Let wheels run forever
                 if turn_left < 0.5:
-                    self.firmware.right_side_turn(run_forever=True, running_speed=75)
+                    self.firmware.right_side_turn(run_forever=True, running_speed=50)
                 else:
-                    self.firmware.left_side_turn(run_forever=True, running_speed=75)
+                    self.firmware.left_side_turn(run_forever=True, running_speed=50)
 
                 # Start a "timer" to listen for stop signal and measure time elapsed for the loop
                 loop_start_time = time.time()
@@ -367,9 +367,9 @@ class EV3_Client:
                     currently_turning = False
                 else:
                     if turn_left:
-                        self.firmware.right_side_turn(run_forever=False, run_by_time=True, running_time=1, running_speed=75)
+                        self.firmware.right_side_turn(run_forever=False, run_by_time=True, running_time=1, running_speed=50)
                     else:
-                        self.firmware.left_side_turn(run_forever=False, run_by_time=True, running_time=1, running_speed=75)
+                        self.firmware.left_side_turn(run_forever=False, run_by_time=True, running_time=1, running_speed=50)
                     break
             else:
                 # Driving forward forever
