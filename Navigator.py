@@ -210,11 +210,6 @@ class Navigator:
         self.robot_controller.read_qr_code()
 
         if self.is_plant_approached(plant):
-
-            # Save bb area.
-            with open("/home/student/bbarea.txt", "a") as myfile:
-                myfile.write(str(self.get_bb_area(plant))+"\n")
-
             # Count frames to skip.
             # if self.approach_frame_counter is not 0:
             #     self.remote_motor_controller.stop()

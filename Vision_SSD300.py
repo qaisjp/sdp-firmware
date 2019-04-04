@@ -271,7 +271,7 @@ class Vision:
                 cv2.polylines(frame,[pts_bb_midpoint],True,(0,255,0))
 
                 # Draw centre acceptance interval.
-                delta = int(6 / (((xmax - xmin) * (ymax - ymin)) / (640*480)))
+                delta = min(120, int(6 / (((xmax - xmin) * (ymax - ymin)) / (640*480))))
                 cv2.rectangle(frame, (320-delta, 0), (320+delta, 480), (153,255,255), 1)
 
 
