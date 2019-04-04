@@ -154,6 +154,7 @@ class Remote(object):
         elif type == RPCType.EVENTS:
             fn(data)
         elif type == RPCType.SET_STANDBY:
+            log.info("remote._translate_call('standby', {}, {}".format(data, fn))
             fn(data)
         else:
             raise UnhandledRPCTranslationException()
