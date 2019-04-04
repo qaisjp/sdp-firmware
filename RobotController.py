@@ -88,7 +88,7 @@ class RobotController:
 
     def enabled(self):
         return len(self.actions) > 0 or not self.standby_mode
-    
+
     def clean_actions(self):
         new_actions = {}
         for key in self.actions:
@@ -195,7 +195,7 @@ class RobotController:
         # Take a picture here
         plant_id = None
 
-            
+
         if self.current_qr_approached is not None:
             if self.current_qr_approached.startswith("gbpl:"):
                 plant_id = int(self.current_qr_approached[5:])
@@ -267,6 +267,8 @@ class RobotController:
     def get_state(self):
         if self.standby_mode:
             return "Standby Mode"
+        elif self.retry_approach:
+            return "Retrying approach"
         elif self.navigator.get_random_search_mode():
             return "Random Search Mode"
         elif self.navigator.get_follow_mode():
