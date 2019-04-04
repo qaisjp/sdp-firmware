@@ -267,7 +267,7 @@ class RobotController:
     def get_state(self):
         if self.standby_mode:
             return "Standby Mode"
-        elif self.retry_approach:
+        elif self.retrying_approach:
             return "Retrying approach"
         elif self.navigator.get_random_search_mode():
             return "Random Search Mode"
