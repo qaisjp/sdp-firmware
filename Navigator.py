@@ -301,12 +301,12 @@ class Navigator:
         sensor_flag = False
         sensor_sum = 0
         sensor_count = 0
-        
+
         for i in self.remote_motor_controller.front_sensor_value:
             if i <= 2000:
                 sensor_count += 1
                 sensor_sum += i
-        
+
         if sensor_count > 0 and sensor_sum / sensor_count < 450:
             sensor_flag = True
 
@@ -330,7 +330,7 @@ class Navigator:
         :param plant:
         :return:
         """
-        delta = self.get_dynamic_delta(plant)
+        delta = min(self.get_dynamic_delta(plant), 160)
 
         left = self.frame_midpoint - delta
         right = self.frame_midpoint + delta
@@ -369,6 +369,15 @@ class Navigator:
         :return:            Dynamic delta value
         """
         return self.constant_delta / (self.get_bb_area(plant) / self.frame_area)
+
+    def get_random_search_mode(self):
+        return self.random_search_mode
+
+    def get_follow_mode(self):
+        return self.follow_mode
+
+    def get_escape_mode(self):
+        return self.escape_mode
 
     def remote_move(self, direction):
         if direction == "forward":
