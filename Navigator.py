@@ -80,6 +80,9 @@ class Navigator:
         with open("k2_model.pkl", "rb") as input_file:
             self.angle_model = pickle.load(input_file)
 
+        # Arm status
+        self.arm_up = False
+
         # Establish two websocket connections to new background threads
         ws_sender_loop = asyncio.new_event_loop()
         ws_sender_thread = threading.Thread(name="ws_sender", target=self.sender_action, args=(self.remote_motor_controller, ws_sender_loop,))
@@ -382,8 +385,16 @@ class Navigator:
         elif direction == "brake":
             self.remote_motor_controller.stop()
         elif direction == "armup":
-            self.remote_motor_controller.arm_up()
+            if not self.arm_up:
+                self.remote_motor_controller.arm_up()
+                self.arm_up = True
+            else:
+                log.warn("Arm already in up position")
         elif direction == "armdown":
-            self.remote_motor_controller.arm_down()
+            if self.arm_up:
+                self.remote_motor_controller.arm_down()
+                self.arm_up = False
+            else:
+                log.warn("Arm already in down position")
         else:
             print("Unknown direction received")
