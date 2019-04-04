@@ -61,10 +61,6 @@ class RobotController:
             rm_thread.start()
             # rm_thread.join()
 
-            sched_thread = threading.Thread(target=self.thread_sched,
-                                            name="sched", daemon=True)
-            sched_thread.start()
-
         # Create the navigation system
         self.navigator = Navigator(self, verbose=True)
 
@@ -86,14 +82,9 @@ class RobotController:
     def thread_remote(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.remote.connect())
-
-    def thread_sched(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         self.sched = Scheduler()
         self.sched.run_event_cb = self.run_event
-        loop.run_forever()
+        loop.run_until_complete(self.remote.connect())
 
     def enabled(self):
         return len(self.actions) > 0 or not self.standby_mode
