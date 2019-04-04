@@ -99,7 +99,13 @@ class RemoteMotorController:
             if "message" in package:
                 msg_send = package["message"]
             if package["type"] != "sensor":
-                self.remote.create_log_entry(LogType.UNKNOWN, package["type"] + ": " + msg_send, severity=LogSeverity(package["severity"]))
+                current_plant_id = None
+                if self.robot_controller.current_qr_approached is not None:
+                    try:
+                        current_plant_id = int(self.robot_controller.current_qr_approached[5:])
+                    except:
+                        pass
+                self.remote.create_log_entry(LogType.UNKNOWN, package["type"] + ": " + msg_send, severity=LogSeverity(package["severity"]), plant_id=current_plant_id)
 
     def generate_action_package(self, msg):
         out = {
