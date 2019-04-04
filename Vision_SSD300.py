@@ -194,9 +194,9 @@ class Vision:
         # Draw title/logo
         cv2.putText(frame,
                     "GrowBot Vision System",
-                    (50, 50),
+                    (25, 50),
                     cv2.FONT_HERSHEY_DUPLEX,
-                    1.25,
+                    .75,
                     (0, 150, 0),
                     1,
                     cv2.LINE_AA)
@@ -204,9 +204,9 @@ class Vision:
         # Draw current date
         cv2.putText(frame,
                     now,
-                    (50, 100),
+                    (25, 100),
                     cv2.FONT_HERSHEY_DUPLEX,
-                    1,
+                    .5,
                     (0, 150, 0),
                     1,
                     cv2.LINE_AA)
@@ -214,9 +214,9 @@ class Vision:
         # Draw state
         cv2.putText(frame,
                     state,
-                    (50, 150),
+                    (25, 150),
                     cv2.FONT_HERSHEY_DUPLEX,
-                    1,
+                    .5,
                     (0, 150, 0),
                     1,
                     cv2.LINE_AA)
